@@ -28,3 +28,16 @@ def test_clean_and_merge_lines():
     merged = engine.clean_and_merge_lines(raw, is_cjk=False)
     assert "sentence that" in merged
     assert "Here is another" in merged
+
+
+def test_resolve_lang_tag():
+    engine = OcrEngine()
+    engine._available_languages = ["en-US", "zh-Hans-CN", "ja-JP", "fr-FR", "de-DE"]
+    assert engine._resolve_lang_tag("en") == "en-US"
+    assert engine._resolve_lang_tag("auto") in ["en-US", "zh-Hans-CN"]
+    assert engine._resolve_lang_tag("zh") == "zh-Hans-CN"
+    assert engine._resolve_lang_tag("ja") == "ja-JP"
+    assert engine._resolve_lang_tag("fr") == "fr-FR"
+    assert engine._resolve_lang_tag("de") == "de-DE"
+    # 不在列表中的语言应回退到第一个可用语言或默认语言
+    assert engine._resolve_lang_tag("xx") == "en-US"

@@ -133,24 +133,38 @@ class TrayManager:
         self.lang_actions = []
 
         lang_options = [
-            ("自动 ➔ 中文", "auto", "zh-CN"),
-            ("英文 ➔ 中文", "en", "zh-CN"),
-            ("日文 ➔ 中文", "ja", "zh-CN"),
-            ("中文 ➔ 英文", "zh", "en"),
+            ("🌐 自动 ➔ 简体中文 (默认)", "auto", "zh-CN"),
+            ("🇺🇸 英文 ➔ 简体中文", "en", "zh-CN"),
+            ("🇯🇵 日文 ➔ 简体中文", "ja", "zh-CN"),
+            ("🇰🇷 韩文 ➔ 简体中文", "ko", "zh-CN"),
+            ("🇫🇷 法文 ➔ 简体中文", "fr", "zh-CN"),
+            ("🇩🇪 德文 ➔ 简体中文", "de", "zh-CN"),
+            ("🇷🇺 俄文 ➔ 简体中文", "ru", "zh-CN"),
+            ("🇪🇸 西班牙文 ➔ 简体中文", "es", "zh-CN"),
+            ("🇨🇳 中文 ➔ 英文", "zh", "en"),
+            ("🇨🇳 中文 ➔ 日文", "zh", "ja"),
+            ("🇨🇳 中文 ➔ 韩文", "zh", "ko"),
+            ("🌐 自动 ➔ 英文", "auto", "en"),
         ]
-        cur_src = config_manager.get("source_lang", "auto")
-        cur_tgt = config_manager.get("target_lang", "zh-CN")
+        cur_src = config_manager.get("source_lang", "auto").lower()
+        cur_tgt = config_manager.get("target_lang", "zh-CN").lower()
 
         for label, src, tgt in lang_options:
             act = QAction(label, lang_menu)
             act.setCheckable(True)
             act.setData((src, tgt))
-            if cur_src == src and cur_tgt == tgt:
+            if cur_src == src.lower() and cur_tgt == tgt.lower():
                 act.setChecked(True)
             act.triggered.connect(lambda checked, s=src, t=tgt: self._set_language(s, t))
             self.lang_group.addAction(act)
             lang_menu.addAction(act)
             self.lang_actions.append(act)
+
+        lang_menu.addSeparator()
+        act_custom_lang = QAction("⚙️ 自定义自由选择...", lang_menu)
+        if hasattr(self.window, "open_language_settings"):
+            act_custom_lang.triggered.connect(self.window.open_language_settings)
+        lang_menu.addAction(act_custom_lang)
 
         # 4. 翻译引擎子菜单
         engine_menu = self.menu.addMenu("🚀 翻译引擎")
@@ -334,11 +348,11 @@ class TrayManager:
         self.action_pin.setChecked(config_manager.get("always_on_top", True))
 
         # 同步语种
-        cur_src = config_manager.get("source_lang", "auto")
-        cur_tgt = config_manager.get("target_lang", "zh-CN")
+        cur_src = config_manager.get("source_lang", "auto").lower()
+        cur_tgt = config_manager.get("target_lang", "zh-CN").lower()
         for act in getattr(self, "lang_actions", []):
             src, tgt = act.data()
-            act.setChecked(cur_src == src and cur_tgt == tgt)
+            act.setChecked(cur_src == src.lower() and cur_tgt == tgt.lower())
 
         # 同步引擎
         cur_eng = config_manager.get("engine", "youdao")

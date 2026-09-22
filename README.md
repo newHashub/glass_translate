@@ -2,10 +2,14 @@
 
 <div align="center">
 
+**[简体中文](README.md)** • **[English](README_EN.md)** • **[日本語](README_JA.md)** • **[한국어](README_KO.md)**
+
+<br/>
+
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-18%20Passed%20(100%25)-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-brightgreen)
 ![Startup](https://img.shields.io/badge/Startup-~0.6s%20(秒开)-blue)
 ![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
@@ -124,7 +128,7 @@ python main.py
 - 🪟 **显示/隐藏翻译框**
 - ⏸️ **实时自动翻译** (开启/暂停实时检测)
 - ⚡ **立即识别刷新** (手动强制触发扫描)
-- 🌐 **翻译语言 ➔** (自动➔中文、英文➔中文、日文➔中文、中文➔英文)
+- 🌐 **翻译语言 ➔** (包含英中、日中、韩中、法中、德中、俄中、西中、中英、中日、中韩等 **12 组快捷预设**，或点击 **“⚙️ 自定义自由选择...”** 呼出多语种任意互译面板)
 - 🚀 **翻译引擎 ➔** (⚡ 有道官方直连 [默认]、🌐 MyMemory 免费通道、🤖 自定义大模型)
 - 🔤 **显示模式 ➔** (原地文字替换 [默认] / 悬浮卡片字幕)
 - 🔍 **译文字号 ➔** (紧凑 85%、标准 100% [默认]、稍大 115%、醒目 130%)

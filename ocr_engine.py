@@ -25,25 +25,33 @@ class OcrEngine:
             return ["en-US", "zh-Hans-CN"]
 
     def _resolve_lang_tag(self, source_lang: str) -> str:
-        """根据用户选项映射为 Windows OCR 语言标签"""
-        if source_lang in ["en", "auto"]:
+        """根据用户选项映射为 Windows OCR 语言标签，支持任意系统语言包动态前缀匹配"""
+        if not source_lang or source_lang == "auto":
+            # auto 优先找英文或中文，找不到则选列表首个
             for tag in self.available_languages:
                 if tag.lower().startswith("en"):
                     return tag
-            return "en-US"
-        elif source_lang in ["zh", "zh-CN", "zh-Hans"]:
+            for tag in self.available_languages:
+                if "zh" in tag.lower() or "hans" in tag.lower():
+                    return tag
+            return self.available_languages[0] if self.available_languages else "en-US"
+
+        prefix = source_lang.split("-")[0].lower()
+        # 中文分支 (区分繁简)
+        if prefix in ["zh", "chi"]:
+            if any(k in source_lang.lower() for k in ["hant", "tw", "hk"]):
+                for tag in self.available_languages:
+                    if any(k in tag.lower() for k in ["hant", "tw", "hk"]):
+                        return tag
             for tag in self.available_languages:
                 if "hans" in tag.lower() or "zh" in tag.lower():
                     return tag
             return "zh-Hans-CN"
-        elif source_lang.startswith("ja"):
-            for tag in self.available_languages:
-                if tag.lower().startswith("ja"):
-                    return tag
-        elif source_lang.startswith("ko"):
-            for tag in self.available_languages:
-                if tag.lower().startswith("ko"):
-                    return tag
+
+        # 动态前缀匹配 (en, ja, ko, fr, de, ru, es, it, pt, vi, etc.)
+        for tag in self.available_languages:
+            if tag.lower().startswith(prefix):
+                return tag
 
         return self.available_languages[0] if self.available_languages else "en-US"
 

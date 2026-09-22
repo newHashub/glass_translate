@@ -203,5 +203,29 @@ def test_user_wrapped_paragraphs_and_clustering():
     assert "颠簸" in mock_blocks[13]["translated"] or len(mock_blocks[13]["translated"]) > 0
 
 
+def test_map_youdao_type_and_multilingual_validation():
+    from translator_engine import map_youdao_type, is_valid_translation
+
+    assert map_youdao_type("auto", "zh-CN") == "AUTO"
+    assert map_youdao_type("en", "zh-CN") == "EN2ZH_CN"
+    assert map_youdao_type("zh", "en") == "ZH_CN2EN"
+    assert map_youdao_type("ja", "zh-CN") == "JA2ZH_CN"
+    assert map_youdao_type("zh", "ja") == "ZH_CN2JA"
+    assert map_youdao_type("ko", "zh-CN") == "KR2ZH_CN"
+    assert map_youdao_type("fr", "zh-CN") == "FR2ZH_CN"
+
+    # 多语言验证测试
+    # 目标为英文时：原文是中文，译文如果仍是中文，无效
+    assert not is_valid_translation("你好世界", "你好世界", "en")
+    assert is_valid_translation("你好世界", "Hello world", "en")
+
+    # 目标为日文时：原文是中文，译文如果是日文，有效
+    assert is_valid_translation("你好", "こんにちは", "ja")
+
+    # 目标为韩文时：原文是英文，译文是韩文，有效
+    assert is_valid_translation("Hello", "안녕하세요", "ko")
+
+
+
 
 

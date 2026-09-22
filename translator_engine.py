@@ -24,7 +24,7 @@ def is_valid_translation(src_text: str, trans_text: str, tgt_lang: str = "zh-CN"
     """
     判定翻译文本是否是有效翻译：
     1. 译文不能为空
-    2. 译文不能与原文实质相同（当目标语言为中文，且原文含有非中文外语字符时）
+    2. 译文不能与原文实质相同（避免未翻译回显原文）
     3. 译文不能包含 API 异常报错字符串（如 MYMEMORY WARNING 等）
     """
     if not trans_text or not trans_text.strip():
@@ -33,12 +33,55 @@ def is_valid_translation(src_text: str, trans_text: str, tgt_lang: str = "zh-CN"
     if "MYMEMORY WARNING" in t_upper or "TOO MANY REQUESTS" in t_upper or "QUOTA EXCEEDED" in t_upper:
         return False
 
-    if tgt_lang.startswith("zh"):
+    tgt = tgt_lang.lower()
+    if tgt.startswith("zh"):
         has_foreign = bool(re.search(r"[a-zA-Z\u3040-\u30ff\uac00-\ud7af\u0400-\u04ff\u00C0-\u017F]", src_text))
         if has_foreign and is_same_text(src_text, trans_text):
             return False
+    elif tgt.startswith("en"):
+        has_non_en = bool(re.search(r"[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\u0400-\u04ff]", src_text))
+        if has_non_en and is_same_text(src_text, trans_text):
+            return False
+    elif tgt.startswith("ja"):
+        has_non_ja = bool(re.search(r"[\u4e00-\u9fa5a-zA-Z\uac00-\ud7af]", src_text))
+        if has_non_ja and is_same_text(src_text, trans_text):
+            return False
+    elif tgt.startswith("ko"):
+        has_non_ko = bool(re.search(r"[\u4e00-\u9fa5a-zA-Z\u3040-\u30ff]", src_text))
+        if has_non_ko and is_same_text(src_text, trans_text):
+            return False
+    else:
+        if len(src_text.strip()) > 3 and is_same_text(src_text, trans_text):
+            return False
 
     return True
+
+
+def map_youdao_type(src: str, tgt: str) -> str:
+    """映射有道移动端支持的 type 参数"""
+    s = src.lower().split("-")[0]
+    t = tgt.lower().split("-")[0]
+    if s == "auto":
+        return "AUTO"
+    pairs = {
+        ("zh", "en"): "ZH_CN2EN",
+        ("en", "zh"): "EN2ZH_CN",
+        ("ja", "zh"): "JA2ZH_CN",
+        ("zh", "ja"): "ZH_CN2JA",
+        ("ko", "zh"): "KR2ZH_CN",
+        ("zh", "ko"): "ZH_CN2KR",
+        ("fr", "zh"): "FR2ZH_CN",
+        ("zh", "fr"): "ZH_CN2FR",
+        ("de", "zh"): "DE2ZH_CN",
+        ("zh", "de"): "ZH_CN2DE",
+        ("ru", "zh"): "RU2ZH_CN",
+        ("zh", "ru"): "ZH_CN2RU",
+        ("es", "zh"): "ES2ZH_CN",
+        ("zh", "es"): "ZH_CN2ES",
+        ("it", "zh"): "IT2ZH_CN",
+        ("pt", "zh"): "PT2ZH_CN",
+    }
+    return pairs.get((s, t), "AUTO")
 
 
 def detect_language(text: str) -> str:
@@ -303,7 +346,8 @@ class TranslatorEngine:
         """有道官方移动端翻译通道 (主通道：无 411 频率限制)"""
         try:
             url = "https://m.youdao.com/translate"
-            payload = {"inputtext": text, "type": "AUTO"}
+            yd_type = map_youdao_type(src, tgt)
+            payload = {"inputtext": text, "type": yd_type}
             r = self._session.post(url, data=payload, timeout=3.5)
             if r.status_code == 200:
                 # 优先极速原生正则提取，节省解析开销与内存分配
@@ -338,8 +382,8 @@ class TranslatorEngine:
 
         try:
             self._throttle_youdao(0.22)
-            s = "Auto" if src == "auto" else ("zh-CHS" if src.startswith("zh") else src)
-            t = "zh-CHS" if tgt.startswith("zh") else tgt
+            s = "Auto" if src == "auto" else ("zh-CHS" if src.startswith("zh") else src.split("-")[0].lower())
+            t = "zh-CHS" if tgt.startswith("zh") else tgt.split("-")[0].lower()
 
             url = "https://aidemo.youdao.com/trans"
             data = urllib.parse.urlencode({"q": text, "from": s, "to": t}).encode("utf-8")
@@ -375,8 +419,10 @@ class TranslatorEngine:
     def _translate_mymemory_raw(self, text: str, src: str, tgt: str) -> str:
         """MyMemory 单块安全降级请求 (带语种智能探测与严格超时保护)"""
         try:
-            s = detect_language(text) if src == "auto" else src
-            t = "zh-CN" if tgt in ["zh", "zh-CN", "zh-Hans", "zh-CHS"] else tgt
+            s = detect_language(text) if src == "auto" else src.split("-")[0].lower()
+            t = "zh-CN" if tgt in ["zh", "zh-CN", "zh-Hans", "zh-CHS"] else (
+                "zh-TW" if any(k in tgt.lower() for k in ["hant", "tw", "hk"]) else tgt.split("-")[0].lower()
+            )
 
             encoded = urllib.parse.quote(text[:500])
             url = f"https://api.mymemory.translated.net/get?q={encoded}&langpair={s}|{t}"

@@ -416,6 +416,218 @@ class HotkeyDialog(QDialog):
         self.accept()
 
 
+class LanguageDialog(QDialog):
+    """自定义语言自由选择面板"""
+
+    SOURCE_LANGS = [
+        ("🌐 自动识别 (Auto Detect)", "auto"),
+        ("🇺🇸 英语 (English)", "en"),
+        ("🇯🇵 日语 (Japanese)", "ja"),
+        ("🇰🇷 韩语 (Korean)", "ko"),
+        ("🇨🇳 简体中文 (Simplified Chinese)", "zh-CN"),
+        ("🇹🇼 繁体中文 (Traditional Chinese)", "zh-TW"),
+        ("🇫🇷 法语 (French)", "fr"),
+        ("🇩🇪 德语 (German)", "de"),
+        ("🇷🇺 俄语 (Russian)", "ru"),
+        ("🇪🇸 西班牙语 (Spanish)", "es"),
+        ("🇮🇹 意大利语 (Italian)", "it"),
+        ("🇵🇹 葡萄牙语 (Portuguese)", "pt"),
+        ("🇻🇳 越南语 (Vietnamese)", "vi"),
+        ("🇹🇭 泰语 (Thai)", "th"),
+        ("🇸🇦 阿拉伯语 (Arabic)", "ar"),
+    ]
+
+    TARGET_LANGS = [
+        ("🇨🇳 简体中文 (Simplified Chinese)", "zh-CN"),
+        ("🇹🇼 繁体中文 (Traditional Chinese)", "zh-TW"),
+        ("🇺🇸 英语 (English)", "en"),
+        ("🇯🇵 日语 (Japanese)", "ja"),
+        ("🇰🇷 韩语 (Korean)", "ko"),
+        ("🇫🇷 法语 (French)", "fr"),
+        ("🇩🇪 德语 (German)", "de"),
+        ("🇷🇺 俄语 (Russian)", "ru"),
+        ("🇪🇸 西班牙语 (Spanish)", "es"),
+        ("🇮🇹 意大利语 (Italian)", "it"),
+        ("🇵🇹 葡萄牙语 (Portuguese)", "pt"),
+    ]
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("自由选择翻译语言")
+        self.setFixedSize(400, 320)
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._init_ui()
+
+    def _init_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(14, 14, 14, 14)
+
+        container = QFrame(self)
+        container.setObjectName("langContainer")
+        container.setStyleSheet("""
+            #langContainer {
+                background-color: rgba(18, 24, 38, 250);
+                border: 1px solid rgba(56, 189, 248, 0.45);
+                border-radius: 12px;
+            }
+            QLabel {
+                color: #e2e8f0;
+                font-size: 13px;
+                font-family: 'Segoe UI', 'Microsoft YaHei';
+            }
+            QComboBox {
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(56, 189, 248, 0.35);
+                border-radius: 6px;
+                color: #f1f5f9;
+                font-size: 13px;
+                padding: 6px 12px;
+            }
+            QComboBox:focus {
+                border: 1px solid #38bdf8;
+                background: rgba(56, 189, 248, 0.12);
+            }
+            QComboBox QAbstractItemView {
+                background: #1e293b;
+                color: #f1f5f9;
+                selection-background-color: #0284c7;
+                selection-color: white;
+                border: 1px solid #334155;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QPushButton {
+                background: #0284c7;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 9px 16px;
+                font-size: 13px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background: #0369a1;
+            }
+        """)
+
+        form = QVBoxLayout(container)
+        form.setContentsMargins(20, 18, 20, 18)
+        form.setSpacing(10)
+
+        # 标题栏
+        header_box = QHBoxLayout()
+        title_label = QLabel("🌐 自由选择翻译语言", self)
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
+        close_btn = QPushButton("✕", self)
+        close_btn.setFixedSize(26, 26)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #94a3b8;
+                font-size: 13px;
+                border-radius: 13px;
+                padding: 0;
+            }
+            QPushButton:hover {
+                background: rgba(239, 68, 68, 0.85);
+                color: white;
+            }
+        """)
+        close_btn.clicked.connect(self.close)
+        header_box.addWidget(title_label)
+        header_box.addStretch()
+        header_box.addWidget(close_btn)
+        form.addLayout(header_box)
+
+        # 源语言
+        form.addWidget(QLabel("原文语言 (Source Language):"))
+        self.combo_source = QComboBox(self)
+        cur_src = config_manager.get("source_lang", "auto")
+        for idx, (label, code) in enumerate(self.SOURCE_LANGS):
+            self.combo_source.addItem(label, code)
+            if code.lower() == cur_src.lower():
+                self.combo_source.setCurrentIndex(idx)
+        form.addWidget(self.combo_source)
+
+        # 互换按钮行
+        swap_box = QHBoxLayout()
+        swap_box.addStretch()
+        swap_btn = QPushButton("⇅ 快速交换方向", self)
+        swap_btn.setFixedHeight(28)
+        swap_btn.setStyleSheet("""
+            QPushButton {
+                background: rgba(56, 189, 248, 0.15);
+                color: #38bdf8;
+                border: 1px solid rgba(56, 189, 248, 0.35);
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            QPushButton:hover {
+                background: rgba(56, 189, 248, 0.3);
+            }
+        """)
+        swap_btn.clicked.connect(self._swap_languages)
+        swap_box.addWidget(swap_btn)
+        form.addLayout(swap_box)
+
+        # 目标语言
+        form.addWidget(QLabel("目标语言 (Target Language):"))
+        self.combo_target = QComboBox(self)
+        cur_tgt = config_manager.get("target_lang", "zh-CN")
+        for idx, (label, code) in enumerate(self.TARGET_LANGS):
+            self.combo_target.addItem(label, code)
+            if code.lower() == cur_tgt.lower():
+                self.combo_target.setCurrentIndex(idx)
+        form.addWidget(self.combo_target)
+
+        form.addSpacing(6)
+
+        save_btn = QPushButton("保存并立即生效", self)
+        save_btn.setFixedHeight(38)
+        save_btn.clicked.connect(self._save_and_apply)
+        form.addWidget(save_btn)
+
+        main_layout.addWidget(container)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, "_drag_pos"):
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
+    def _swap_languages(self):
+        src_code = self.combo_source.currentData()
+        tgt_code = self.combo_target.currentData()
+        if src_code == "auto":
+            src_code = "en"
+        for i in range(self.combo_source.count()):
+            if self.combo_source.itemData(i).lower() == tgt_code.lower():
+                self.combo_source.setCurrentIndex(i)
+                break
+        for i in range(self.combo_target.count()):
+            if self.combo_target.itemData(i).lower() == src_code.lower():
+                self.combo_target.setCurrentIndex(i)
+                break
+
+    def _save_and_apply(self):
+        src = self.combo_source.currentData()
+        tgt = self.combo_target.currentData()
+        config_manager.set("source_lang", src, auto_save=False)
+        config_manager.set("target_lang", tgt, auto_save=True)
+        if self.parent():
+            if hasattr(self.parent(), "tray_manager") and self.parent().tray_manager:
+                self.parent().tray_manager.sync_states()
+            if hasattr(self.parent(), "trigger_refresh"):
+                self.parent().trigger_refresh()
+        self.accept()
+
+
 # 保持向后兼容别名
 SettingsDialog = ApiConfigDialog
 
@@ -963,6 +1175,10 @@ class GlassWindow(QWidget):
 
     def open_hotkey_settings(self):
         dialog = HotkeyDialog(self)
+        dialog.exec()
+
+    def open_language_settings(self):
+        dialog = LanguageDialog(self)
         dialog.exec()
 
     def reload_hotkey(self, new_hotkey: str):
