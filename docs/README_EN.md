@@ -73,41 +73,55 @@ When reading foreign research papers, browsing overseas technical documentation,
 - **Smooth Edge Sensing**: Hovering within 14px of any edge or corner smoothly transitions the cursor to resize handles.
 - **Anchor-Centered Wheel Zooming**: Scroll the mouse wheel inside the frame to expand or shrink the capture boundary centered around your cursor.
 
+> 📦 **Zero-Config Prebuilt Binary**: For non-technical users, no Python installation is required! Head over to [👉 GitHub Releases](https://github.com/newHashub/glass_translate/releases) to download `GlassTranslate-v1.0.0-Windows-x64.zip` and run it out-of-the-box!
+
 ---
 
 ## 🚀 Quick Start
 
-### Requirements
-- **OS**: Windows 10 (Build 19041+) or Windows 11
+Choose your preferred way based on your needs:
+
+### Option 1: Prebuilt Portable Package (Recommended for Non-Coders)
+
+No Python or environment setup required:
+1. Go to [👉 Releases Page](https://github.com/newHashub/glass_translate/releases).
+2. Download the precompiled archive **`GlassTranslate-v1.0.0-Windows-x64.zip`**.
+3. Extract it to any directory on your computer (e.g. `D:\GlassTranslate`).
+4. Double-click **`一键生成桌面快捷方式.vbs`** to generate the desktop shortcut with application icon, or double-click **`GlassTranslate.exe`** directly to launch instantly!
+
+---
+
+### Option 2: Run from Source (For Developers)
+
+For developers looking to inspect source code or contribute:
+
+#### 1. Requirements
+- **OS**: Windows 10 (Build 19041+) or Windows 11 (64-bit)
 - **Python**: Python 3.10+ (Python 3.12 recommended)
 
-### 1. Clone the Repository
+#### 2. Clone & Install Dependencies
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-```
-
-### 2. Run Application
-
-#### Method A: Instant Native App (Recommended, ~0.6s cold start)
-- Double-click **`GlassTranslate.lnk`** or run **`run.bat`** in the project root.
-- Directly launches the standalone directory build at `dist/GlassTranslate/GlassTranslate.exe` with zero console popups.
-
-#### Method B: Run from Source
-```powershell
-# 1. Install dependencies
 pip install -r requirements.txt
-
-# 2. Run main application
-python main.py
 ```
 
-### 📦 Build Standalone Windows Executable
-To recompile the standalone executable after making modifications:
-```powershell
-.\build_exe.bat
-```
-This automatically compiles dependencies into `dist/GlassTranslate/` and creates the desktop shortcut `GlassTranslate.lnk`.
+#### 3. Run Application
+- **Convenient Script**: Double-click **`run.bat`** (auto-detects Python environment, launches quietly with zero console window).
+- **Command Line**:
+  ```powershell
+  python main.py
+  ```
+
+---
+
+### 📦 Build Standalone Executable (For Developers)
+To recompile the standalone native executable after modifying code:
+- Run **`build_exe.bat`** in the project root.
+- The script automatically:
+  1. Compiles the native app into `dist\GlassTranslate\`;
+  2. Updates/creates the **`GlassTranslate.lnk`** shortcut on your Windows desktop;
+  3. Generates the ready-to-distribute archive `dist\GlassTranslate-v1.0.0-Windows-x64.zip`.
 
 ---
 

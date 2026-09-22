@@ -72,39 +72,55 @@
 - 内置偏好设置面板，不仅支持内置高速引擎，还可自由接入自定义 API（如 OpenAI `gpt-4o-mini`、`deepseek-chat` 或本地 Ollama）。
 - 配置窗口自适应舒适排版，模型输入与操作按钮完整舒展，支持鼠标无边框拖拽移动。
 
+> 📦 **普通用户开箱即用**：无需安装 Python 或配置任何环境，直接前往 [👉 GitHub Releases 发行页](https://github.com/newHashub/glass_translate/releases) 下载 `GlassTranslate-v1.0.0-Windows-x64.zip` 解压即用！
+
 ---
 
 ## 🚀 快速开始
 
-### 环境依赖
-- **操作系统**：Windows 10 / Windows 11
+根据您的使用需求，选择对应方式：
+
+### 方案一：普通用户免配环境版（推荐，免装 Python，解压即用）
+
+适合不熟悉编程、希望直接使用的用户：
+1. 前往 [👉 Releases 发行版页面](https://github.com/newHashub/glass_translate/releases)；
+2. 下载预编译打包好的分发包 **`GlassTranslate-v1.0.0-Windows-x64.zip`**；
+3. 解压到您电脑的任意位置（如 `D:\GlassTranslate`）；
+4. 双击解压目录中的 **`一键生成桌面快捷方式.vbs`**（将在桌面生成专属的启动图标），或直接双击 **`GlassTranslate.exe`** 即可瞬间启动！
+
+---
+
+### 方案二：开发者源码运行与开发
+
+适合熟悉 Python、希望阅读源码或进行二次开发的用户：
+
+#### 1. 环境依赖
+- **操作系统**：Windows 10 / Windows 11 (64位)
 - **Python 版本**：Python 3.10+ (推荐 Python 3.12)
 
-### 1. 克隆代码
+#### 2. 克隆代码与依赖安装
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-```
-
-### 2. 启动运行
-
-#### 方式一：独立秒开版原生应用（推荐，0.6s 双击秒开，零黑框）
-- 直接双击根目录生成的 **`GlassTranslate.lnk`** 或 **`run.bat`**。
-- 程序将直接调用 `dist/GlassTranslate/GlassTranslate.exe`，无需解压，秒显窗口。
-
-#### 方式二：Python 源码直接启动
-```powershell
-# 1. 安装依赖
 pip install -r requirements.txt
-
-# 2. 启动程序
-python main.py
 ```
 
-### 📦 一键打包原生 EXE
-如果您修改了代码并希望重新编译生成秒开版 Windows 应用：
-- 直接双击运行 **`build_exe.bat`**；
-- 脚本将自动处理依赖、打包并更新根目录的桌面快捷方式 `GlassTranslate.lnk`。
+#### 3. 启动程序
+- **便捷方式**：直接双击运行根目录下的 **`run.bat`**（自动检测环境、静默后台启动、无黑框）；
+- **命令行方式**：
+  ```powershell
+  python main.py
+  ```
+
+---
+
+### 📦 开发者本地打包独立应用 (EXE)
+如果您修改了源代码，希望在本地将其编译为独立的免环境 EXE 应用：
+- 双击运行根目录下的 **`build_exe.bat`**；
+- 脚本将自动：
+  1. 编译生成独立应用到 `dist\GlassTranslate\`；
+  2. 在您本机的桌面创建/更新 **`GlassTranslate.lnk`** 快捷方式；
+  3. 自动生成可直接分享给好友的免配置压缩包 `dist\GlassTranslate-v1.0.0-Windows-x64.zip`。
 
 ---
 

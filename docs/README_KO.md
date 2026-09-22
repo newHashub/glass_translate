@@ -73,41 +73,55 @@
 - **부드러운 경계선 감지**: 테두리 14px 범위에 마우스를 올리면 자동으로 리사이즈 커서로 전환됩니다.
 - **커서 기준 마우스 휠 줌**: 프레임 안에서 마우스 휠을 굴리면 마우스 포인터 위치를 중심으로 뷰파인더 크기가 즉시 확대/축소됩니다(메뉴에서 ON/OFF 가능).
 
+> 📦 **일반 사용자 원클릭 다운로드(환경 설정 불필요)**: Python 설치나 복잡한 설정이 전혀 필요하지 않습니다. [👉 GitHub Releases](https://github.com/newHashub/glass_translate/releases)에서 `GlassTranslate-v1.0.0-Windows-x64.zip`을 다운로드하여 압축을 풀기만 하면 바로 실행할 수 있습니다!
+
 ---
 
 ## 🚀 빠른 시작
 
-### 요구 사양
-- **운영체제**: Windows 10 (빌드 19041 이상) 또는 Windows 11
+사용 목적에 맞춰 아래 방법 중 하나를 선택하세요:
+
+### 방법 1: 배포용 무설치 패키지 실행 (일반 사용자 권장)
+
+Python 설치나 복잡한 설정이 필요 없습니다:
+1. [👉 Releases 페이지](https://github.com/newHashub/glass_translate/releases)로 이동합니다.
+2. 빌드 완료된 배포 패키지 **`GlassTranslate-v1.0.0-Windows-x64.zip`**을 다운로드합니다.
+3. PC의 원하는 위치(예: `D:\GlassTranslate`)에 압축을 풉니다.
+4. 폴더 안의 **`一键生成桌面快捷方式.vbs`**를 더블클릭하여 바탕화면에 바로가기를 생성하거나, **`GlassTranslate.exe`**를 직접 더블클릭하여 즉시 실행할 수 있습니다!
+
+---
+
+### 방법 2: Python 소스 코드 직접 실행 (개발자 권장)
+
+소스 코드를 분석하거나 추가 개발을 원하는 경우:
+
+#### 1. 요구 사양
+- **운영체제**: Windows 10 (빌드 19041 이상) 또는 Windows 11 (64비트)
 - **Python 버전**: Python 3.10 이상 (Python 3.12 권장)
 
-### 1. 코드 복제
+#### 2. 코드 복제 및 의존성 패키지 설치
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-```
-
-### 2. 프로그램 실행
-
-#### 방법 1: 초고속 실행 단독 앱 (권장, 0.6초 즉시 실행, 콘솔 창 없음)
-- 루트 디렉터리에 생성된 **`GlassTranslate.lnk`** 바로가기 또는 **`run.bat`** 파일을 더블클릭합니다.
-- 압축 해제 과정 없이 `dist/GlassTranslate/GlassTranslate.exe`가 바로 실행됩니다.
-
-#### 방법 2: Python 소스 코드 직접 실행
-```powershell
-# 1. 의존성 패키지 설치
 pip install -r requirements.txt
-
-# 2. 프로그램 실행
-python main.py
 ```
 
-### 📦 Windows 네이티브 실행 파일 빌드
-코드를 수정한 후 단독 실행 파일 형태로 재컴파일하려면:
-```powershell
-.\build_exe.bat
-```
-자동으로 의존 라이브러리를 `dist/GlassTranslate/` 폴더에 빌드하고 바탕화면 바로가기 `GlassTranslate.lnk`를 생성합니다.
+#### 3. 프로그램 실행
+- **간편 실행**: 루트 디렉터리의 **`run.bat`** 파일을 더블클릭합니다(환경을 자동 감지하여 콘솔 창 없이 백그라운드에서 조용히 실행).
+- **명령줄 실행**:
+  ```powershell
+  python main.py
+  ```
+
+---
+
+### 📦 Windows 단독 실행 파일 빌드 (개발자용)
+소스를 수정한 후 독립 실행 파일로 다시 빌드하려면:
+- 루트 디렉터리의 **`build_exe.bat`**를 실행합니다.
+- 다음 과정이 자동으로 진행됩니다:
+  1. `dist\GlassTranslate\`에 단독 앱 빌드;
+  2. 현재 PC 바탕화면에 **`GlassTranslate.lnk`** 바로가기 생성/갱신;
+  3. 다른 사람에게 바로 배포할 수 있는 ZIP 압축 파일 `dist\GlassTranslate-v1.0.0-Windows-x64.zip` 자동 생성.
 
 ---
 

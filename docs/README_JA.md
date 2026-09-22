@@ -73,41 +73,55 @@
 - **スムーズなエッジ判定**：ウィンドウ端 14px 以内にマウスを合わせると自動でリサイズカーソルに変形。
 - **マウス位置中心のホイールズーム**：枠内でマウスホイールをスクロールするだけで、カーソル位置を中心にファインダーサイズを素早く伸縮可能（設定でON/OFF切替可能）。
 
+> 📦 **一般ユーザー向け（環境構築不要）**：Python のインストールや環境設定は一切不要です。[👉 GitHub Releases](https://github.com/newHashub/glass_translate/releases) から `GlassTranslate-v1.0.0-Windows-x64.zip` をダウンロードして解凍するだけで、すぐにご利用いただけます！
+
 ---
 
 ## 🚀 クイックスタート
 
-### 動作環境
-- **OS**: Windows 10 (Build 19041 以降) または Windows 11
+用途に合わせて以下のいずれかの方法を選択してください：
+
+### 方法 1: 配布用パッケージ版（一般ユーザー向け・推奨）
+
+Python のインストールや難しい設定は不要です：
+1. [👉 Releases ページ](https://github.com/newHashub/glass_translate/releases) にアクセスします。
+2. ビルド済みパッケージ **`GlassTranslate-v1.0.0-Windows-x64.zip`** をダウンロードします。
+3. PC 内の任意のフォルダ（例: `D:\GlassTranslate`）に解凍します。
+4. フォルダ内の **`一键生成桌面快捷方式.vbs`** をダブルクリックしてデスクトップにアイコンを作成するか、**`GlassTranslate.exe`** を直接ダブルクリックして即座に起動できます！
+
+---
+
+### 方法 2: ソースコードからの実行（開発者向け）
+
+ソースコードの閲覧やカスタマイズを行いたい場合：
+
+#### 1. 動作環境
+- **OS**: Windows 10 (Build 19041 以降) または Windows 11 (64bit)
 - **Python**: Python 3.10+ (Python 3.12 推奨)
 
-### 1. リポジトリのクローン
+#### 2. リポジトリのクローンと依存関係のインストール
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-```
-
-### 2. アプリの起動
-
-#### 方法 A: スタンドアロン実行版（推奨・0.6秒起動・黒窓なし）
-- プロジェクトルートにある **`GlassTranslate.lnk`** または **`run.bat`** をダブルクリック。
-- 解凍待ちなしで `dist/GlassTranslate/GlassTranslate.exe` が即座に立ち上がります。
-
-#### 方法 B: Python ソースコードから起動
-```powershell
-# 1. 依存関係のインストール
 pip install -r requirements.txt
-
-# 2. アプリの実行
-python main.py
 ```
 
-### 📦 Windows ネイティブ EXE のワンクリックビルド
-コード変更後にスタンドアロン実行ファイルを再ビルドしたい場合：
-```powershell
-.\build_exe.bat
-```
-依存ライブラリを `dist/GlassTranslate/` に一括出力し、デスクトップショートカット `GlassTranslate.lnk` を更新します。
+#### 3. アプリの起動
+- **簡単起動**: ルートディレクトリの **`run.bat`** をダブルクリック（自動で環境を判別し、コンソール非表示で静かに起動します）。
+- **コマンドライン**:
+  ```powershell
+  python main.py
+  ```
+
+---
+
+### 📦 スタンドアロン実行ファイルのビルド（開発者向け）
+ソースコード変更後に単独実行ファイルとして再ビルドしたい場合：
+- ルートにある **`build_exe.bat`** を実行します。
+- 以下の処理が自動で行われます：
+  1. `dist\GlassTranslate\` にネイティブアプリを出力；
+  2. お使いのデスクトップに **`GlassTranslate.lnk`** ショートカットを作成／更新；
+  3. 他の PC へ配布可能な ZIP パッケージ `dist\GlassTranslate-v1.0.0-Windows-x64.zip` を自動生成。
 
 ---
 
