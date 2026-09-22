@@ -99,7 +99,7 @@ class OcrEngine:
         return bg_rgb, text_rgb
 
     def clean_and_merge_lines(self, raw_lines: List[str], is_cjk: bool = False) -> str:
-        """清洗并将 OCR 折行断句自然拼接为连贯段落"""
+        """清洗并将 OCR 折行断句自然拼接为连贯段落，同时严密保护物理换行"""
         cleaned_lines = [line.strip() for line in raw_lines if line.strip()]
         if not cleaned_lines:
             return ""
@@ -112,14 +112,30 @@ class OcrEngine:
 
             last = merged[-1]
             if last.endswith("-"):
+                # 连字符折行断词 (如 sen- / tence)
                 merged[-1] = last[:-1] + line
             elif is_cjk:
-                merged[-1] = last + line
-            else:
-                if re.search(r"[.?!:：。！？]$", last):
+                # 中日文字符判定
+                if re.search(r"[。！？!?；;：:]$", last):
                     merged.append(line)
                 else:
+                    merged[-1] = last + line
+            else:
+                # 判定当前行是否是独立的新换行项：
+                # 1. 上一行以句末标点结尾
+                is_terminal = bool(re.search(r"[.?!:：。！？;；]$", last))
+                # 2. 当前行以列表标识开头 (如 1. / 1) / - / * / •)
+                is_list_item = bool(re.match(r"^(\d+[\.\)]|[-*•])\s+", line))
+                # 3. 上一行很短 (<= 35 字符) 且当前行以大写字母开头 (通常是标题、独立段落、列表短句)
+                is_short_and_capital = len(last) <= 35 and line[0].isupper()
+
+                if is_terminal or is_list_item or is_short_and_capital:
+                    merged.append(line)
+                elif line[0].islower() and len(last) > 35:
+                    # 仅当上一行较长 (屏幕右侧回流折行) 且下一行以小写字母接续时，才视为同一句折行拼接
                     merged[-1] = last + " " + line
+                else:
+                    merged.append(line)
 
         return "\n".join(merged)
 

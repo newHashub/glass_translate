@@ -27,6 +27,7 @@ def cluster_blocks(blocks: List[Dict[str, Any]]) -> List[List[int]]:
         cur_b = blocks[i]
 
         prev_text = prev_b.get("text", "").strip()
+        cur_text = cur_b.get("text", "").strip()
         ends_with_terminal = bool(re.search(r"[.!?。！？:：;；]$", prev_text))
 
         prev_box = prev_b.get("box", (0, 0, 0, 20))
@@ -35,9 +36,15 @@ def cluster_blocks(blocks: List[Dict[str, Any]]) -> List[List[int]]:
         prev_h = prev_box[3]
         cur_y = cur_box[1]
         pitch = cur_y - (prev_y + prev_h)
-        is_large_gap = pitch > prev_h * 1.5
 
-        if ends_with_terminal or is_large_gap:
+        # 行间距大于行高 0.65 倍即判定为物理换行/段落间隔
+        is_large_gap = pitch > max(8.0, prev_h * 0.65)
+        # 列表标识 (如 1. / - / * 等)
+        is_list = bool(re.match(r"^(\d+[\.\)]|[-*•])\s+", cur_text))
+        # 上一行较短且当前行首字母大写 (如短句、标题、各行独立的短语)
+        is_short_title = len(prev_text) <= 35 and bool(cur_text) and cur_text[0].isupper()
+
+        if ends_with_terminal or is_large_gap or is_list or is_short_title:
             clusters.append(cur_cluster)
             cur_cluster = [i]
         else:
@@ -288,10 +295,15 @@ class TranslationWorker(QThread):
                     payload, source_lang, target_lang
                 )
 
-                trans_lines = translated_all.split("\n") if translated_all else []
+                trans_lines = [l.strip() for l in translated_all.split("\n") if l.strip()] if translated_all else []
 
-                # 若翻译返回句数与句簇数一致，按各视觉行物理宽度自适应平滑映射
-                if len(trans_lines) == len(clusters):
+                # 1. 若翻译返回行数与 blocks 物理行数直接相等，1对1精准对应
+                if len(trans_lines) == len(blocks):
+                    for idx, b in enumerate(blocks):
+                        blocks[idx]["translated"] = trans_lines[idx]
+
+                # 2. 若翻译返回句数与聚类句簇数一致，按各簇内视觉行物理宽度平滑映射
+                elif len(trans_lines) == len(clusters):
                     for cl, t_sent in zip(clusters, trans_lines):
                         t_clean = t_sent.strip()
                         c_blocks = [blocks[i] for i in cl]
@@ -299,14 +311,15 @@ class TranslationWorker(QThread):
                         wrapped_subs = wrap_text_to_lines(t_clean, widths)
                         for b_idx, sub_t in zip(cl, wrapped_subs):
                             blocks[b_idx]["translated"] = sub_t
+
+                # 3. 容灾平滑分发：当翻译结果仅返回 1 行或行数少于 blocks 时，
+                #    按所有物理行的实际宽度比例自动平滑折行切分分布到各行，绝不允许把全部译文塞进第一行！
                 else:
-                    # 容灾备用：逐行对应
-                    for i, b in enumerate(blocks):
-                        lt = trans_lines[i].strip() if i < len(trans_lines) else ""
-                        if lt and is_valid_translation(b["text"], lt, target_lang):
-                            b["translated"] = lt
-                        else:
-                            b["translated"] = ""
+                    all_widths = [max(30.0, float(b["box"][2])) for b in blocks]
+                    full_clean = " ".join(trans_lines) if trans_lines else (translated_all.strip() if translated_all else "")
+                    wrapped_all = wrap_text_to_lines(full_clean, all_widths)
+                    for idx, b in enumerate(blocks):
+                        blocks[idx]["translated"] = wrapped_all[idx] if idx < len(wrapped_all) else ""
 
                 # 6. 100% 全覆盖保障网：针对任何因切分、过滤或网络抖动遗漏的行，自动精准补齐
                 valid_count = 0
@@ -327,9 +340,16 @@ class TranslationWorker(QThread):
                             else:
                                 b["translated"] = ""
 
-                # 将识别与有效翻译结果发送给主界面 (若无有效翻译则 translated_all 传空，避免字幕卡片显示原文)
+                # 重新构建带清晰物理换行的完整译文，供卡片模式和复制到剪贴板使用
+                valid_lines = [b["translated"].strip() for b in blocks if b.get("translated", "").strip()]
+                if len(valid_lines) > 1:
+                    final_translated = "\n".join(valid_lines)
+                else:
+                    final_translated = translated_all if valid_count > 0 else ""
+
+                # 将识别与有效翻译结果发送给主界面 (保证卡片模式与复制均有优雅换行)
                 self.result_ready.emit(
-                    merged_text, translated_all if valid_count > 0 else "", blocks, (img.width, img.height)
+                    merged_text, final_translated, blocks, (img.width, img.height)
                 )
 
                 if valid_count == 0 and len(blocks) > 0:

@@ -120,3 +120,28 @@ def test_api_config_dialog_and_menu_sync(qapp):
     assert vk2 == 0x73
 
 
+def test_multiline_cluster_and_boundary_constraint(qapp):
+    from worker import cluster_blocks, wrap_text_to_lines
+    from ocr_engine import OcrEngine
+
+    # 1. 验证短句/标题换行不会被吞并为一个簇
+    b1 = {"box": (10, 10, 120, 20), "text": "First title item"}
+    b2 = {"box": (10, 40, 130, 20), "text": "Second title item"}
+    clusters = cluster_blocks([b1, b2])
+    assert len(clusters) == 2
+    assert clusters == [[0], [1]]
+
+    # 2. 验证 OCR clean_and_merge_lines 保持换行
+    ocr = OcrEngine()
+    merged = ocr.clean_and_merge_lines(["First line", "Second line"])
+    assert "\n" in merged
+
+    # 3. 验证超长文本在 layout_text_blocks 中被窗口右边界安全约束
+    b_long = {"box": (10, 10, 100, 20), "translated": "这是一段非常非常长的翻译文本，测试它会不会无限向右延伸超出取景框边界", "bg_rgb": (255, 255, 255), "text_rgb": (0, 0, 0)}
+    items = layout_text_blocks([b_long], cw=300, ch=200, iw=300, ih=200)
+    assert len(items) == 1
+    # 确保 pad_rect.right() <= 窗口宽度 cw (300)
+    assert items[0]["pad_rect"].right() <= 300.0
+
+
+

@@ -77,7 +77,8 @@ def layout_text_blocks(
         text_w = fm.horizontalAdvance(trans_text)
         text_h = fm.height()
 
-        target_w = max(ww + 4, text_w + 6)
+        max_avail_w = max(30.0, cw - wx - 4)
+        target_w = min(max_avail_w, max(ww + 4, text_w + 6))
         target_h = max(wh, min(limit_h, text_h + 2))
 
         pad_rect = QRectF(wx - 1, wy, target_w, target_h)
