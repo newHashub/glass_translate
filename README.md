@@ -76,12 +76,19 @@ pip install -r requirements.txt
 ```
 
 ### 3. 启动运行
-- **方式一：双击快捷脚本（无黑框静默运行）**
-  - 双击运行 **`run.bat`** 或 **`run.vbs`**。
-- **方式二：命令行启动**
+- **方式一：原生应用程序（零黑框，推荐）**
+  - 直接双击根目录的 **`GlassTranslate.lnk`** 或 **`dist/GlassTranslate.exe`**。
+  - 纯原生 Windows GUI 程序，不依赖本地 Python，双击即开，零控制台黑框！
+- **方式二：运行脚本**
+  - 双击 **`run.bat`** 或 **`run.vbs`**（脚本将自动寻找完整 Python 环境或直接调用 EXE）。
+- **方式三：命令行启动**
   ```powershell
   python main.py
   ```
+
+### 📦 一键打包独立 EXE
+如果您修改了代码并希望重新生成单文件 `.exe`：
+- 直接双击运行 **`build_exe.bat`**，脚本将自动处理依赖并在 `dist/` 目录下生成全新的 `GlassTranslate.exe`！
 
 ---
 
@@ -161,6 +168,8 @@ glass_translate/
 ├── config.py            # 本地配置管理器 (自适应缺省值与自动持久化)
 ├── run.bat              # 便携智能启动批处理脚本
 ├── run.vbs              # 完全无黑框后台静默启动脚本
+├── build_exe.bat        # 一键打包生成原生 EXE 脚本
+├── app_icon.ico         # 专属高分辨率玻璃质感应用图标
 ├── requirements.txt     # 项目 Python 依赖库声明
 ├── pytest.ini           # 单元测试自动化配置
 ├── LICENSE              # MIT 开源许可证

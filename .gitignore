@@ -54,3 +54,4 @@ htmlcov/
 config.json
 *.log
 scratch/
+*.lnk

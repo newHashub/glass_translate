@@ -2,7 +2,13 @@
 setlocal
 cd /d "%~dp0"
 
-:: 1. 优先检查项目本地虚拟环境
+:: 1. 如果已打包了独立 EXE，优先直接启动原生应用 (零黑框、零依赖)
+if exist "dist\GlassTranslate.exe" (
+    start "" "dist\GlassTranslate.exe"
+    exit /b
+)
+
+:: 2. 检查本地专用虚拟环境
 if exist "venv\Scripts\pythonw.exe" (
     start "" "venv\Scripts\pythonw.exe" "main.py"
     exit /b
@@ -12,26 +18,37 @@ if exist ".venv\Scripts\pythonw.exe" (
     exit /b
 )
 
-:: 2. 检查系统 PATH 中的 pythonw.exe (完全无控制台黑框)
-where pythonw >nul 2>nul
+:: 3. 优先使用 Windows 官方 Python 启动器 pyw -3 (自动定位包含完整环境的主 Python)
+where pyw >nul 2>nul
 if %errorlevel% equ 0 (
-    start "" pythonw "main.py"
-    exit /b
+    py -3 -c "import PyQt6" >nul 2>nul
+    if %errorlevel% equ 0 (
+        start "" pyw -3 "main.py"
+        exit /b
+    )
 )
 
-:: 3. 检查系统 PATH 中的 python.exe
-where python >nul 2>nul
-if %errorlevel% equ 0 (
-    start "" python "main.py"
-    exit /b
+:: 4. 智能遍历 PATH 中所有 pythonw，校验是否装有 PyQt6
+for /f "delims=" %%p in ('where pythonw 2^>nul') do (
+    "%%p" -c "import PyQt6" >nul 2>nul
+    if not errorlevel 1 (
+        start "" "%%p" "main.py"
+        exit /b
+    )
 )
 
-:: 4. 检查 Python Launcher py.exe
-where py >nul 2>nul
-if %errorlevel% equ 0 (
-    start "" py -3 "main.py"
-    exit /b
+:: 5. 智能遍历 PATH 中所有 python，校验是否装有 PyQt6
+for /f "delims=" %%p in ('where python 2^>nul') do (
+    "%%p" -c "import PyQt6" >nul 2>nul
+    if not errorlevel 1 (
+        start "" "%%p" "main.py"
+        exit /b
+    )
 )
 
-echo [错误] 未检测到 Python 运行环境，请先安装 Python 3.10+ 并勾选 "Add Python to PATH"。
+echo =======================================================
+echo [错误] 未检测到安装了完整依赖 (PyQt6 等) 的 Python 运行环境！
+echo 请在命令行中执行以下命令安装依赖：
+echo     pip install -r requirements.txt
+echo =======================================================
 pause
