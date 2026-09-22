@@ -157,5 +157,51 @@ def test_user_long_multi_paragraph_translation():
     assert len(res_lines[7]) > 0
 
 
+def test_user_wrapped_paragraphs_and_clustering():
+    from worker import cluster_blocks, wrap_text_to_lines
+    from translator_engine import is_valid_translation
+
+    # 模拟真实屏幕上因折行导致的 14 个物理视觉行块
+    mock_blocks = [
+        {"box": (20, 26, 225, 20), "text": "Because, well, frankly, you didn’t."},
+        {"box": (20, 50, 154, 20), "text": "You didn’t actually try."},
+        {"box": (20, 74, 136, 20), "text": "So what do you do?"},
+        {"box": (20, 98, 585, 20), "text": "If you look at the top athletes, startup founders, visionaries, and strategists who seem"},
+        {"box": (20, 122, 567, 20), "text": "to work 16 hours a day without breaking a sweat, do you think they struggle to do"},
+        {"box": (20, 146, 34, 20), "text": "that?"},
+        {"box": (20, 170, 221, 20), "text": "Or is that what they want to do?"},
+        {"box": (20, 194, 564, 20), "text": "Is it actually hard for them? No. In fact, it’s extremely hard for them to do what the"},
+        {"box": (20, 218, 570, 20), "text": "average person does. It’s a living hell for them to even sense that they’re devolving"},
+        {"box": (20, 242, 135, 20), "text": "into a mediocre life."},
+        {"box": (20, 266, 238, 20), "text": "Why? Because that’s who they are."},
+        {"box": (20, 290, 280, 20), "text": "How do we replicate this in our own life?"},
+        {"box": (20, 314, 69, 20), "text": "Buckle up."},
+        {"box": (20, 338, 97, 20), "text": "It gets bumpy."}
+    ]
+
+    clusters = cluster_blocks(mock_blocks)
+    assert len(clusters) == 10  # 14 行精准聚类为 10 个自然句/段
+
+    cluster_sentences = [" ".join([mock_blocks[i]["text"] for i in cl]) for cl in clusters]
+    payload = "\n".join(cluster_sentences)
+
+    engine = TranslatorEngine()
+    translated_all = engine.translate(payload, "en", "zh-CN")
+    trans_lines = translated_all.splitlines()
+
+    assert len(trans_lines) == len(clusters)
+
+    for cl, t_sent in zip(clusters, trans_lines):
+        c_blocks = [mock_blocks[i] for i in cl]
+        widths = [b["box"][2] for b in c_blocks]
+        wrapped_subs = wrap_text_to_lines(t_sent.strip(), widths)
+        for b_idx, sub_t in zip(cl, wrapped_subs):
+            mock_blocks[b_idx]["translated"] = sub_t
+
+    valid_count = sum(1 for b in mock_blocks if b.get("translated") and is_valid_translation(b["text"], b["translated"], "zh-CN"))
+    assert valid_count == 14  # 14 个块全部成功得到有效中文翻译，100% 覆盖零漏行
+    assert "颠簸" in mock_blocks[13]["translated"] or len(mock_blocks[13]["translated"]) > 0
+
+
 
 

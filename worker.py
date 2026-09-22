@@ -1,5 +1,6 @@
 import time
 import threading
+import re
 from typing import Optional, Tuple, List, Dict, Any
 from PyQt6.QtCore import QThread, pyqtSignal
 
@@ -7,6 +8,80 @@ from capture_engine import CaptureEngine
 from ocr_engine import OcrEngine
 from translator_engine import TranslatorEngine, is_valid_translation, is_same_text
 from config import config_manager
+
+
+def cluster_blocks(blocks: List[Dict[str, Any]]) -> List[List[int]]:
+    """
+    将 OCR 视觉行智能聚类为自然段落/语义句簇：
+    1. 若前一行末尾不是终止标点 (. ! ? 。 ！ ？ : ； ; 等)，合并为同一语义句簇，防止断句翻译错漏
+    2. 若两行之间的垂直行距 (pitch) 明显大于正常行间距，则判定为段落视觉分隔
+    """
+    if not blocks:
+        return []
+
+    clusters: List[List[int]] = []
+    cur_cluster: List[int] = [0]
+
+    for i in range(1, len(blocks)):
+        prev_b = blocks[i - 1]
+        cur_b = blocks[i]
+
+        prev_text = prev_b.get("text", "").strip()
+        ends_with_terminal = bool(re.search(r"[.!?。！？:：;；]$", prev_text))
+
+        prev_box = prev_b.get("box", (0, 0, 0, 20))
+        cur_box = cur_b.get("box", (0, 0, 0, 20))
+        prev_y = prev_box[1]
+        prev_h = prev_box[3]
+        cur_y = cur_box[1]
+        pitch = cur_y - (prev_y + prev_h)
+        is_large_gap = pitch > prev_h * 1.5
+
+        if ends_with_terminal or is_large_gap:
+            clusters.append(cur_cluster)
+            cur_cluster = [i]
+        else:
+            cur_cluster.append(i)
+
+    if cur_cluster:
+        clusters.append(cur_cluster)
+    return clusters
+
+
+def wrap_text_to_lines(text: str, line_widths: List[float]) -> List[str]:
+    """
+    将整句/整段翻译结果按各原视觉行的相对像素宽度比例，平滑分布到对应的物理行中
+    """
+    if not text:
+        return ["" for _ in line_widths]
+    if len(line_widths) == 1:
+        return [text]
+
+    total_w = sum(line_widths)
+    if total_w <= 0:
+        total_w = float(len(line_widths))
+        line_widths = [1.0 for _ in line_widths]
+
+    total_chars = len(text)
+    allocated_lengths = []
+    accum = 0
+    for idx, w in enumerate(line_widths):
+        if idx == len(line_widths) - 1:
+            allocated_lengths.append(total_chars - accum)
+        else:
+            n = int(round(total_chars * (w / total_w)))
+            n = max(1, min(total_chars - accum - (len(line_widths) - 1 - idx), n))
+            allocated_lengths.append(n)
+            accum += n
+
+    res_lines = []
+    char_idx = 0
+    for n in allocated_lengths:
+        segment = text[char_idx : char_idx + n].strip()
+        char_idx += n
+        res_lines.append(segment)
+
+    return res_lines
 
 
 
@@ -201,26 +276,56 @@ class TranslationWorker(QThread):
                 time.sleep(sleep_sec)
                 continue
 
-            # 5. 未完全命中缓存时，走多引擎自适应翻译 (100~180ms)
+            # 5. 未完全命中缓存时，走自然句簇聚类与多引擎自适应翻译 (100~180ms)
             self.status_changed.emit(f"⏳ 正在翻译 ({len(blocks)} 行)...", "busy")
             try:
-                all_lines = [b["text"] for b in blocks]
-                lines_payload = "\n".join(all_lines)
+                clusters = cluster_blocks(blocks)
+                # 聚类为自然语义完整句子，彻底解决 OCR 屏幕物理折行导致的断句丢意与行数错乱
+                cluster_sentences = [" ".join([blocks[i]["text"] for i in cl]) for cl in clusters]
+                payload = "\n".join(cluster_sentences)
 
                 translated_all = self.translator_engine.translate(
-                    lines_payload, source_lang, target_lang
+                    payload, source_lang, target_lang
                 )
 
-
                 trans_lines = translated_all.split("\n") if translated_all else []
+
+                # 若翻译返回句数与句簇数一致，按各视觉行物理宽度自适应平滑映射
+                if len(trans_lines) == len(clusters):
+                    for cl, t_sent in zip(clusters, trans_lines):
+                        t_clean = t_sent.strip()
+                        c_blocks = [blocks[i] for i in cl]
+                        widths = [b["box"][2] for b in c_blocks]
+                        wrapped_subs = wrap_text_to_lines(t_clean, widths)
+                        for b_idx, sub_t in zip(cl, wrapped_subs):
+                            blocks[b_idx]["translated"] = sub_t
+                else:
+                    # 容灾备用：逐行对应
+                    for i, b in enumerate(blocks):
+                        lt = trans_lines[i].strip() if i < len(trans_lines) else ""
+                        if lt and is_valid_translation(b["text"], lt, target_lang):
+                            b["translated"] = lt
+                        else:
+                            b["translated"] = ""
+
+                # 6. 100% 全覆盖保障网：针对任何因切分、过滤或网络抖动遗漏的行，自动精准补齐
                 valid_count = 0
-                for i, b in enumerate(blocks):
-                    line_trans = trans_lines[i].strip() if i < len(trans_lines) else ""
-                    if line_trans and is_valid_translation(b["text"], line_trans, target_lang):
-                        b["translated"] = line_trans
+                for b in blocks:
+                    t_val = b.get("translated", "").strip()
+                    if t_val and is_valid_translation(b["text"], t_val, target_lang):
                         valid_count += 1
                     else:
-                        b["translated"] = ""
+                        cached_l = self.translator_engine.get_line_translation(b["text"])
+                        if cached_l:
+                            b["translated"] = cached_l
+                            valid_count += 1
+                        else:
+                            single_t = self.translator_engine.translate(b["text"], source_lang, target_lang)
+                            if single_t and is_valid_translation(b["text"], single_t, target_lang):
+                                b["translated"] = single_t
+                                valid_count += 1
+                            else:
+                                b["translated"] = ""
 
                 # 将识别与有效翻译结果发送给主界面 (若无有效翻译则 translated_all 传空，避免字幕卡片显示原文)
                 self.result_ready.emit(
