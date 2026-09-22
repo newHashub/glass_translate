@@ -17,8 +17,12 @@ def get_app_icon() -> QIcon:
         return _cached_app_icon
 
     candidates = [
+        "resources/app_icon.ico",
         "app_icon.ico",
+        os.path.join(getattr(sys, "_MEIPASS", ""), "resources", "app_icon.ico"),
         os.path.join(getattr(sys, "_MEIPASS", ""), "app_icon.ico"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources", "app_icon.ico"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "app_icon.ico"),
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "app_icon.ico")
     ]
     for p in candidates:
