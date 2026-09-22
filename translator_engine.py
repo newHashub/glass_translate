@@ -160,8 +160,8 @@ class TranslatorEngine:
         self._cache[key] = val
         self._cache_keys.append(key)
 
-    def _chunk_lines(self, lines: List[str], max_lines: int = 20, max_chars: int = 800) -> List[List[str]]:
-        """将多行文本切分为既不超过行数限制也不超过字符限制的子块"""
+    def _chunk_lines(self, lines: List[str], max_lines: int = 6, max_chars: int = 360) -> List[List[str]]:
+        """将多行文本切分为既不超过行数限制也不超过字符限制的子块 (默认严格控制在 360 字符内，规避截断)"""
         chunks: List[List[str]] = []
         cur_chunk: List[str] = []
         cur_chars = 0
@@ -217,18 +217,33 @@ class TranslatorEngine:
         elif engine == "mymemory":
             result = self._translate_mymemory_batched(text, src_lang, tgt_lang)
         else:
-            # 默认 Youdao 高可用引擎 (单块扩容至 25 行 / 900 字符，绝大部分段落一次搞定)
+            # 默认 Youdao 高可用引擎：
+            # 严格控制单块不超过 360 字符 / 6 行，杜绝移动端接口静默截断丢句
             lines = text.split("\n")
-            if len(lines) <= 25 and len(text) <= 900:
+            if len(lines) <= 6 and len(text) <= 360:
                 result = self._translate_single_chunk(text, src_lang, tgt_lang)
             else:
-                # 极端超长文本安全平稳分块 (内置平滑延时)
-                chunks = self._chunk_lines(lines, max_lines=20, max_chars=800)
+                chunks = self._chunk_lines(lines, max_lines=6, max_chars=360)
                 translated_chunks = []
                 for c in chunks:
                     c_txt = "\n".join(c)
                     c_res = self._translate_single_chunk(c_txt, src_lang, tgt_lang)
-                    translated_chunks.append(c_res if c_res else c_txt)
+                    c_res_lines = c_res.split("\n") if c_res else []
+                    if len(c_res_lines) == len(c):
+                        translated_chunks.append(c_res)
+                    else:
+                        aligned = []
+                        for idx_l, orig_l in enumerate(c):
+                            if idx_l < len(c_res_lines) and is_valid_translation(orig_l, c_res_lines[idx_l], tgt_lang):
+                                aligned.append(c_res_lines[idx_l])
+                            else:
+                                cached_l = self.get_line_translation(orig_l)
+                                if cached_l:
+                                    aligned.append(cached_l)
+                                else:
+                                    single_res = self._translate_single_chunk(orig_l, src_lang, tgt_lang)
+                                    aligned.append(single_res if single_res else orig_l)
+                        translated_chunks.append("\n".join(aligned))
                 result = "\n".join(translated_chunks)
 
         # 校验结果有效性，更新整段缓存与各行语义缓存
@@ -250,6 +265,19 @@ class TranslatorEngine:
 
     def _translate_single_chunk(self, chunk_text: str, src: str, tgt: str) -> str:
         """翻译单个短块：首选有道移动端官方通道，失败后平滑降级 aidemo 与 MyMemory"""
+        chunk_text = chunk_text.strip()
+        if not chunk_text:
+            return ""
+
+        # 若单行/单段仍超出 380 字符，按句子标点切分子句避免移动端单句截断
+        if len(chunk_text) > 380 and ("." in chunk_text or "。" in chunk_text or "!" in chunk_text or "?" in chunk_text):
+            sentences = re.split(r"(?<=[.!?。！？])\s+", chunk_text)
+            if len(sentences) > 1:
+                sub_res = [self._translate_single_chunk(s, src, tgt) for s in sentences if s.strip()]
+                joined = " ".join([r for r in sub_res if r])
+                if joined and is_valid_translation(chunk_text, joined, tgt):
+                    return joined
+
         # 1. 首选有道官方移动端极速通道 (无 411 限制，60~100ms)
         res_m = self._translate_youdao_mobile(chunk_text, src, tgt)
         if res_m and is_valid_translation(chunk_text, res_m, tgt):

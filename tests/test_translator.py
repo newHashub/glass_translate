@@ -138,5 +138,24 @@ def test_line_level_cache_and_shift_reuse():
     assert assembled == "我起得很晚。\n周末我不去上学。"
 
 
+def test_user_long_multi_paragraph_translation():
+    text = (
+        "You want to change your life.\n"
+        "Like really bad.\n"
+        "You’re tired of where you are. You’re tired of your physique, or how your mind is not your friend, or how you have to stress over not being able to pay the bills each month, or how you’re going to end up alone.\n"
+        "You finally gain the motivation to start in the gym, start the business, start talking to more people, you know the drill.\n"
+        "Fast forward 2-4 weeks and nothing has changed.\n"
+        "You don’t even know how it happened... you just ended up back in your old life without making any progress.\n"
+        "And this isn’t the first time. You lock in, fall off, lock in again, fall off, and 10 years go by (for some people, their entire life goes by) without breaking the habit of being your worst self.\n"
+        "It sucks."
+    )
+    engine = TranslatorEngine()
+    res = engine.translate(text, "en", "zh-CN")
+    res_lines = res.splitlines()
+    assert len(res_lines) == 8
+    assert "这已经不是第一次" in res_lines[6] or "第一次" in res_lines[6]
+    assert len(res_lines[7]) > 0
+
+
 
 
