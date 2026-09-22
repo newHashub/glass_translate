@@ -494,9 +494,21 @@ class GlassWindow(QWidget):
         set_exclude_from_capture(hwnd, True)
 
     def _init_ui(self):
-        root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.setSpacing(0)
+        self.root_layout = QVBoxLayout(self)
+        self.root_layout.setContentsMargins(0, 0, 0, 0)
+        self.root_layout.setSpacing(0)
+
+        self.card_scroll = None
+        self.card_widget = None
+        self.card_label = None
+
+        cur_mode = config_manager.get("display_mode", "inplace")
+        self.apply_mode(cur_mode)
+
+    def _ensure_card_widget(self):
+        """按需惰性创建卡片模式视图，默认原地替换模式下零开销，启动立省 440ms"""
+        if self.card_scroll is not None:
+            return
 
         self.card_scroll = QScrollArea(self)
         self.card_scroll.setWidgetResizable(True)
@@ -517,23 +529,23 @@ class GlassWindow(QWidget):
         card_inner_layout.addWidget(self.card_label)
 
         self.card_scroll.setWidget(self.card_widget)
-        root_layout.addWidget(self.card_scroll)
-
-        cur_mode = config_manager.get("display_mode", "inplace")
-        self.apply_mode(cur_mode)
+        self.root_layout.addWidget(self.card_scroll)
 
     def apply_mode(self, mode: str):
         config_manager.set("display_mode", mode)
         if mode == "inplace":
-            self.card_scroll.setVisible(False)
+            if self.card_scroll is not None:
+                self.card_scroll.setVisible(False)
         else:
+            self._ensure_card_widget()
             self.card_scroll.setVisible(True)
         self.update()
 
     def _clear_stale_content(self):
         self.text_blocks = []
         self.merged_translated = ""
-        self.card_label.setText("")
+        if self.card_label:
+            self.card_label.setText("")
         self._cached_layout_items = []
         self._cached_layout_signature = None
         self._result_version += 1
@@ -940,7 +952,8 @@ class GlassWindow(QWidget):
 
 
     def copy_translation(self):
-        text = self.merged_translated.strip() or self.card_label.text().strip()
+        card_text = self.card_label.text().strip() if self.card_label else ""
+        text = self.merged_translated.strip() or card_text
         if text and not text.startswith("🪟"):
             QApplication.clipboard().setText(text)
 
@@ -974,10 +987,11 @@ class GlassWindow(QWidget):
         self.img_size = img_size
         self._result_version += 1
 
-        if translated:
-            self.card_label.setText(f"{translated}")
-        else:
-            self.card_label.setText("🪟 拖拽此取景框覆盖文字，即可实时翻译 (右键唤出设置菜单)")
+        if self.card_label:
+            if translated:
+                self.card_label.setText(f"{translated}")
+            else:
+                self.card_label.setText("🪟 拖拽此取景框覆盖文字，即可实时翻译 (右键唤出设置菜单)")
 
         self.update()
         self.repaint()

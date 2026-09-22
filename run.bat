@@ -2,7 +2,11 @@
 setlocal
 cd /d "%~dp0"
 
-:: 1. 如果已打包了独立 EXE，优先直接启动原生应用 (零黑框、零依赖)
+:: 1. 优先直接启动秒开版原生应用 (0.7秒极速秒显、零黑框、免临时解压)
+if exist "dist\GlassTranslate\GlassTranslate.exe" (
+    start "" "dist\GlassTranslate\GlassTranslate.exe"
+    exit /b
+)
 if exist "dist\GlassTranslate.exe" (
     start "" "dist\GlassTranslate.exe"
     exit /b

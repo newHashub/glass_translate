@@ -2,15 +2,19 @@ import asyncio
 import re
 from typing import List, Optional, Tuple, Dict, Any
 from PIL import Image, ImageEnhance
-import winocr
 
 
 class OcrEngine:
     """Windows 原生硬件加速 OCR 引擎，支持行级坐标提取与背景色自适应采样"""
 
     def __init__(self):
-        self.available_languages = self._detect_supported_languages()
-        print(f"[OcrEngine] 系统支持的 OCR 语言: {self.available_languages}")
+        self._available_languages: Optional[List[str]] = None
+
+    @property
+    def available_languages(self) -> List[str]:
+        if self._available_languages is None:
+            self._available_languages = self._detect_supported_languages()
+        return self._available_languages
 
     def _detect_supported_languages(self) -> List[str]:
         try:
@@ -122,6 +126,7 @@ class OcrEngine:
         lang_tag = self._resolve_lang_tag(source_lang)
 
         try:
+            import winocr
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:

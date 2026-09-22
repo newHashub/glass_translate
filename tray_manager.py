@@ -1,12 +1,39 @@
+import os
+import sys
+from typing import Optional
 from PyQt6.QtCore import Qt, pyqtSlot
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont, QPen, QBrush, QAction, QActionGroup
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QApplication
 
 from config import config_manager
 
+_cached_app_icon: Optional[QIcon] = None
+
+
+def get_app_icon() -> QIcon:
+    """获取应用图标：优先从本地/打包的 app_icon.ico 毫秒级读取，带单例内存缓存"""
+    global _cached_app_icon
+    if _cached_app_icon is not None and not _cached_app_icon.isNull():
+        return _cached_app_icon
+
+    candidates = [
+        "app_icon.ico",
+        os.path.join(getattr(sys, "_MEIPASS", ""), "app_icon.ico"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "app_icon.ico")
+    ]
+    for p in candidates:
+        if p and os.path.exists(p):
+            icon = QIcon(p)
+            if not icon.isNull():
+                _cached_app_icon = icon
+                return _cached_app_icon
+
+    _cached_app_icon = generate_tray_icon()
+    return _cached_app_icon
+
 
 def generate_tray_icon() -> QIcon:
-    """程序化生成高分辨率玻璃质感托盘图标"""
+    """程序化生成高分辨率玻璃质感托盘图标 (兜底回退)"""
     pixmap = QPixmap(64, 64)
     pixmap.fill(QColor(0, 0, 0, 0))
 
@@ -34,7 +61,7 @@ class TrayManager:
 
     def __init__(self, window):
         self.window = window
-        self.tray_icon = QSystemTrayIcon(generate_tray_icon(), window)
+        self.tray_icon = QSystemTrayIcon(get_app_icon(), window)
         self.tray_icon.setToolTip("Windows 实时透视翻译器 (后台运行中)")
 
         self.menu = QMenu()

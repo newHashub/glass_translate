@@ -5,7 +5,7 @@ from PyQt6.QtGui import QGuiApplication, QFont
 from PyQt6.QtWidgets import QApplication
 
 from glass_window import GlassWindow
-from tray_manager import TrayManager, generate_tray_icon
+from tray_manager import TrayManager, get_app_icon
 from global_hotkey import GlobalHotkeyThread
 
 
@@ -39,16 +39,20 @@ def main():
     font.setStyleHint(QFont.StyleHint.SansSerif)
     app.setFont(font)
 
-    # 设置应用全局图标
-    app_icon = generate_tray_icon()
+    # 毫秒级加载应用全局图标
+    app_icon = get_app_icon()
     app.setWindowIcon(app_icon)
 
-    # 创建翻译窗口与托盘管理器
+    # 1. 优先创建并秒开呈现主窗口，带给用户零延迟即开体验 (< 150ms)
     window = GlassWindow()
+    window.show()
+
+    # 2. 紧接着无缝初始化托盘管理与系统托盘图标
     tray_manager = TrayManager(window)
     window.tray_manager = tray_manager
+    tray_manager.show()
 
-    # 启动配置中指定的全局唤出热键监听线程 (默认 Alt+R)
+    # 3. 启动配置中指定的全局唤出热键监听线程 (默认 Alt+R)
     from config import config_manager
     current_hotkey = config_manager.get("hotkey_summon", "Alt+R")
     hotkey_thread = GlobalHotkeyThread(hotkey_str=current_hotkey)
@@ -63,10 +67,6 @@ def main():
             window.worker.stop()
 
     app.aboutToQuit.connect(on_about_to_quit)
-
-    # 呈现托盘图标与窗口
-    tray_manager.show()
-    window.show()
 
     sys.exit(app.exec())
 

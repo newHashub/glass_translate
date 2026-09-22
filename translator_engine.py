@@ -8,7 +8,6 @@ import urllib.parse
 import urllib.request
 from typing import Dict, List, Optional, Tuple
 import requests
-from bs4 import BeautifulSoup
 from config import config_manager
 
 
@@ -307,13 +306,27 @@ class TranslatorEngine:
             payload = {"inputtext": text, "type": "AUTO"}
             r = self._session.post(url, data=payload, timeout=3.5)
             if r.status_code == 200:
-                soup = BeautifulSoup(r.text, "html.parser")
-                ul = soup.find("ul", id="translateResult")
-                if ul:
-                    li_items = [li.get_text().strip() for li in ul.find_all("li")]
-                    res = "\n".join([item for item in li_items if item])
+                # 优先极速原生正则提取，节省解析开销与内存分配
+                ul_m = re.search(r'<ul[^>]*id=[\'"]translateResult[\'"][^>]*>(.*?)</ul>', r.text, re.DOTALL | re.IGNORECASE)
+                if ul_m:
+                    items = re.findall(r'<li[^>]*>(.*?)</li>', ul_m.group(1), re.DOTALL | re.IGNORECASE)
+                    clean_items = [html.unescape(re.sub(r'<[^>]+>', '', it)).strip() for it in items if it.strip()]
+                    res = "\n".join([it for it in clean_items if it])
                     if res and is_valid_translation(text, res, tgt):
                         return res
+
+                # 兜底回退 bs4 (按需延迟导入)
+                try:
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(r.text, "html.parser")
+                    ul = soup.find("ul", id="translateResult")
+                    if ul:
+                        li_items = [li.get_text().strip() for li in ul.find_all("li")]
+                        res = "\n".join([item for item in li_items if item])
+                        if res and is_valid_translation(text, res, tgt):
+                            return res
+                except ImportError:
+                    pass
         except Exception as e:
             print(f"[TranslatorEngine] Youdao Mobile 异常: {e}")
         return ""

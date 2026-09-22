@@ -22,9 +22,9 @@ class TranslationWorker(QThread):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.capture_engine = CaptureEngine()
-        self.ocr_engine = OcrEngine()
-        self.translator_engine = TranslatorEngine()
+        self._capture_engine = None
+        self._ocr_engine = None
+        self._translator_engine = None
 
         self._running = True
         self._paused = False
@@ -36,13 +36,44 @@ class TranslationWorker(QThread):
         self._lock = threading.Lock()
         self._last_recognized_text = ""
 
+    @property
+    def capture_engine(self):
+        if self._capture_engine is None:
+            self._capture_engine = CaptureEngine()
+        return self._capture_engine
+
+    @capture_engine.setter
+    def capture_engine(self, val):
+        self._capture_engine = val
+
+    @property
+    def ocr_engine(self):
+        if self._ocr_engine is None:
+            self._ocr_engine = OcrEngine()
+        return self._ocr_engine
+
+    @ocr_engine.setter
+    def ocr_engine(self, val):
+        self._ocr_engine = val
+
+    @property
+    def translator_engine(self):
+        if self._translator_engine is None:
+            self._translator_engine = TranslatorEngine()
+        return self._translator_engine
+
+    @translator_engine.setter
+    def translator_engine(self, val):
+        self._translator_engine = val
+
     def set_moving(self, is_moving: bool):
         """窗口开始移动或缩放：立即进入静默态，避免移动中浪费算力与锁竞争"""
         with self._lock:
             self._is_moving = is_moving
             if is_moving:
                 self._force_scan_counter = 0
-                self.capture_engine.force_reset()
+                if self._capture_engine is not None:
+                    self._capture_engine.force_reset()
 
     def notify_new_position(self, rect: Tuple[int, int, int, int]):
         """窗口落位新坐标：连续3次强制刷新确保跨越DWM重绘延迟，保留内容指纹以便快速复用"""
@@ -51,7 +82,8 @@ class TranslationWorker(QThread):
             self._is_moving = False
             self._force_scan_counter = 3
             self._need_immediate_scan = True
-            self.capture_engine.force_reset()
+            if self._capture_engine is not None:
+                self._capture_engine.force_reset()
 
     def trigger_once(self, rect: Optional[Tuple[int, int, int, int]] = None):
         """立即强制触发识别与翻译"""
@@ -62,7 +94,8 @@ class TranslationWorker(QThread):
             self._force_scan_counter = 3
             self._need_immediate_scan = True
             self._force_trigger = True
-            self.capture_engine.force_reset()
+            if self._capture_engine is not None:
+                self._capture_engine.force_reset()
 
 
     def set_paused(self, paused: bool):
@@ -81,6 +114,14 @@ class TranslationWorker(QThread):
         self.wait(1500)
 
     def run(self):
+        # 在后台工作线程就绪时并行预热三大引擎，绝不阻塞主 GUI 线程与窗口呈现
+        try:
+            _ = self.capture_engine
+            _ = self.ocr_engine
+            _ = self.translator_engine
+        except Exception as e:
+            print(f"[TranslationWorker] 后台预热引擎异常: {e}")
+
         while self._running:
             interval_ms = config_manager.get("scan_interval_ms", 300)
             sleep_sec = max(0.05, interval_ms / 1000.0)
