@@ -9,6 +9,7 @@ echo [2/3] 正在生成专属高清玻璃质感应用图标 (app_icon.ico)...
 py -3 -c "from PIL import Image, ImageDraw, ImageFont; img = Image.new('RGBA', (256, 256), (0, 0, 0, 0)); draw = ImageDraw.Draw(img); draw.rounded_rectangle([(16, 16), (240, 240)], radius=64, fill=(2, 132, 199, 245), outline=(56, 189, 248, 255), width=8); font = ImageFont.truetype('msyh.ttc', 130); bbox = draw.textbbox((0, 0), '译', font=font); w = bbox[2] - bbox[0]; h = bbox[3] - bbox[1]; draw.text(((256 - w) // 2 - bbox[0], (256 - h) // 2 - bbox[1] - 8), '译', fill=(255, 255, 255), font=font); img.save('app_icon.ico', format='ICO', sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])"
 
 echo [3/3] 正在使用 PyInstaller 编译 GlassTranslate.exe (纯原生 GUI，零黑框)...
+taskkill /f /im GlassTranslate.exe >nul 2>nul
 py -3 -m PyInstaller --onefile --noconsole --name "GlassTranslate" --icon="app_icon.ico" --clean main.py
 
 echo.

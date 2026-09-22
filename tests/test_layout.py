@@ -75,6 +75,10 @@ def test_api_config_dialog_and_menu_sync(qapp):
             pass
         def open_api_settings(self):
             pass
+        def open_hotkey_settings(self):
+            pass
+        def reload_hotkey(self, hk):
+            config_manager.set("hotkey_summon", hk)
         def set_auto_translate(self, b):
             pass
         def set_always_on_top(self, b):
@@ -91,10 +95,28 @@ def test_api_config_dialog_and_menu_sync(qapp):
     tray._set_interval(200)
     assert config_manager.get("scan_interval_ms") == 200
 
-    # 测试 ApiConfigDialog 初始化与保存
+    # 测试修改热键
+    tray._set_hotkey("Alt+Q")
+    assert config_manager.get("hotkey_summon") == "Alt+Q"
+
+    # 测试 ApiConfigDialog 初始化与尺寸
     dlg = ApiConfigDialog(win)
     assert dlg.url_input.text()
     assert dlg.model_input.text()
+    assert dlg.height() >= 400
     dlg.close()
+
+    # 测试 HotkeyDialog 初始化
+    from glass_window import HotkeyDialog
+    from global_hotkey import parse_hotkey
+    hk_dlg = HotkeyDialog(win)
+    assert hk_dlg.hotkey_edit.text() == "Alt+Q"
+    hk_dlg.close()
+
+    # 测试热键解析器
+    mods, vk = parse_hotkey("Ctrl+Alt+T")
+    assert vk == ord("T")
+    mods2, vk2 = parse_hotkey("F4")
+    assert vk2 == 0x73
 
 

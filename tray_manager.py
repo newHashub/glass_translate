@@ -225,6 +225,40 @@ class TrayManager:
             speed_menu.addAction(act)
             self.speed_actions.append(act)
 
+        # 8. 唤出快捷键配置子菜单
+        hotkey_menu = self.menu.addMenu("⌨️ 唤出快捷键")
+        hotkey_menu.setStyleSheet(self.menu.styleSheet())
+        self.hotkey_group = QActionGroup(self.menu)
+        self.hotkey_group.setExclusive(True)
+        self.hotkey_actions = []
+
+        hotkey_options = [
+            ("Alt + R (默认·推荐)", "Alt+R"),
+            ("Alt + Q", "Alt+Q"),
+            ("Alt + W", "Alt+W"),
+            ("Alt + D", "Alt+D"),
+            ("Alt + Space", "Alt+Space"),
+            ("Ctrl + Shift + R", "Ctrl+Shift+R"),
+            ("F4", "F4"),
+        ]
+        cur_hotkey = config_manager.get("hotkey_summon", "Alt+R")
+        for label, hk in hotkey_options:
+            act = QAction(label, hotkey_menu)
+            act.setCheckable(True)
+            act.setData(hk)
+            if cur_hotkey.upper() == hk.upper():
+                act.setChecked(True)
+            act.triggered.connect(lambda checked, k=hk: self._set_hotkey(k))
+            self.hotkey_group.addAction(act)
+            hotkey_menu.addAction(act)
+            self.hotkey_actions.append(act)
+
+        hotkey_menu.addSeparator()
+        act_custom_hk = QAction("⌨️ 自定义快捷键...", hotkey_menu)
+        if hasattr(self.window, "open_hotkey_settings"):
+            act_custom_hk.triggered.connect(self.window.open_hotkey_settings)
+        hotkey_menu.addAction(act_custom_hk)
+
         self.menu.addSeparator()
 
         # 8. 交互快捷开关
@@ -298,6 +332,16 @@ class TrayManager:
         cur_interval = config_manager.get("scan_interval_ms", 300)
         for act in getattr(self, "speed_actions", []):
             act.setChecked(act.data() == cur_interval)
+
+        # 同步唤出快捷键
+        cur_hk = config_manager.get("hotkey_summon", "Alt+R").upper()
+        for act in getattr(self, "hotkey_actions", []):
+            act.setChecked(act.data().upper() == cur_hk)
+
+    def _set_hotkey(self, hk: str):
+        if hasattr(self.window, "reload_hotkey"):
+            self.window.reload_hotkey(hk)
+        self.sync_states()
 
     def _set_engine(self, engine_id: str):
         config_manager.set("engine", engine_id)

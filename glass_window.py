@@ -97,12 +97,12 @@ def layout_text_blocks(
 
 
 class ApiConfigDialog(QDialog):
-    """自定义大模型 API 配置面板 (轻量专注，零冗余设置)"""
+    """自定义大模型 API 配置面板 (轻量专注，排版舒适，杜绝裁剪遮挡)"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("自定义 API 配置")
-        self.setFixedSize(380, 310)
+        self.setFixedSize(450, 430)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
@@ -116,8 +116,8 @@ class ApiConfigDialog(QDialog):
         container.setObjectName("apiContainer")
         container.setStyleSheet("""
             #apiContainer {
-                background-color: rgba(18, 24, 38, 248);
-                border: 1px solid rgba(56, 189, 248, 0.4);
+                background-color: rgba(18, 24, 38, 250);
+                border: 1px solid rgba(56, 189, 248, 0.45);
                 border-radius: 12px;
             }
             QLabel {
@@ -127,19 +127,24 @@ class ApiConfigDialog(QDialog):
             }
             QLineEdit {
                 background: rgba(255, 255, 255, 0.08);
-                border: 1px solid rgba(255, 255, 255, 0.18);
+                border: 1px solid rgba(255, 255, 255, 0.20);
                 border-radius: 6px;
                 padding: 6px 10px;
                 color: #ffffff;
                 font-size: 12px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #38bdf8;
+                background: rgba(255, 255, 255, 0.12);
             }
             QPushButton {
                 background: #0284c7;
                 color: white;
                 border: none;
                 border-radius: 6px;
-                padding: 8px 16px;
+                padding: 9px 16px;
                 font-size: 13px;
+                font-weight: 500;
             }
             QPushButton:hover {
                 background: #0369a1;
@@ -147,21 +152,21 @@ class ApiConfigDialog(QDialog):
         """)
 
         form = QVBoxLayout(container)
-        form.setContentsMargins(18, 16, 18, 16)
+        form.setContentsMargins(20, 18, 20, 18)
         form.setSpacing(10)
 
         # 标题栏
         header_box = QHBoxLayout()
         title_label = QLabel("🔑 自定义大模型 API 配置", self)
-        title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #38bdf8;")
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
         close_btn = QPushButton("✕", self)
-        close_btn.setFixedSize(24, 24)
+        close_btn.setFixedSize(26, 26)
         close_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
                 color: #94a3b8;
                 font-size: 13px;
-                border-radius: 12px;
+                border-radius: 13px;
                 padding: 0;
             }
             QPushButton:hover {
@@ -175,35 +180,53 @@ class ApiConfigDialog(QDialog):
         header_box.addWidget(close_btn)
         form.addLayout(header_box)
 
-        # 提示
-        tip = QLabel("兼容 OpenAI、DeepSeek、Ollama 等标准协议接口")
-        tip.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        tip = QLabel("全面兼容 OpenAI、DeepSeek、Ollama 等标准协议接口")
+        tip.setStyleSheet("color: #94a3b8; font-size: 11px; margin-bottom: 2px;")
         form.addWidget(tip)
 
+        # 1. 端点
         form.addWidget(QLabel("API 端点 (URL):"))
         self.url_input = QLineEdit()
+        self.url_input.setFixedHeight(34)
         self.url_input.setPlaceholderText("https://api.openai.com/v1/chat/completions")
         self.url_input.setText(config_manager.get("api_url", "https://api.openai.com/v1/chat/completions"))
         form.addWidget(self.url_input)
 
+        # 2. 密钥
         form.addWidget(QLabel("API 密钥 (Key):"))
         self.key_input = QLineEdit()
+        self.key_input.setFixedHeight(34)
         self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.key_input.setPlaceholderText("sk-...")
         self.key_input.setText(config_manager.get("api_key", ""))
         form.addWidget(self.key_input)
 
+        # 3. 模型
         form.addWidget(QLabel("模型名称 (Model):"))
         self.model_input = QLineEdit()
-        self.model_input.setPlaceholderText("gpt-4o-mini 或 deepseek-chat")
+        self.model_input.setFixedHeight(34)
+        self.model_input.setPlaceholderText("例如: gpt-4o-mini 或 deepseek-chat")
         self.model_input.setText(config_manager.get("api_model", "gpt-4o-mini"))
         form.addWidget(self.model_input)
 
-        save_btn = QPushButton("确定并启用自定义大模型", self)
+        form.addSpacing(4)
+
+        save_btn = QPushButton("保存并启用自定义大模型", self)
+        save_btn.setFixedHeight(38)
         save_btn.clicked.connect(self._save_and_close)
         form.addWidget(save_btn)
 
         main_layout.addWidget(container)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, "_drag_pos"):
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
 
     def _save_and_close(self):
         config_manager.set("api_url", self.url_input.text().strip(), auto_save=False)
@@ -214,6 +237,182 @@ class ApiConfigDialog(QDialog):
             if hasattr(self.parent(), "tray_manager") and self.parent().tray_manager:
                 self.parent().tray_manager.sync_states()
             self.parent().trigger_refresh()
+        self.accept()
+
+
+class HotkeyEdit(QLineEdit):
+    """自动捕获键盘按键并格式化为标准热键组合字符"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setReadOnly(True)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setFixedHeight(38)
+        self.setStyleSheet("""
+            QLineEdit {
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid #0284c7;
+                border-radius: 6px;
+                color: #38bdf8;
+                font-size: 15px;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+            QLineEdit:focus {
+                border: 2px solid #38bdf8;
+                background: rgba(56, 189, 248, 0.12);
+            }
+        """)
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        modifiers = event.modifiers()
+
+        # 忽略单独按下的修饰键
+        if key in (Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_Alt, Qt.Key.Key_Meta):
+            return
+
+        parts = []
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            parts.append("Ctrl")
+        if modifiers & Qt.KeyboardModifier.AltModifier:
+            parts.append("Alt")
+        if modifiers & Qt.KeyboardModifier.ShiftModifier:
+            parts.append("Shift")
+        if modifiers & Qt.KeyboardModifier.MetaModifier:
+            parts.append("Win")
+
+        if Qt.Key.Key_F1 <= key <= Qt.Key.Key_F12:
+            parts.append(f"F{key - Qt.Key.Key_F1 + 1}")
+        elif key == Qt.Key.Key_Space:
+            parts.append("Space")
+        elif key == Qt.Key.Key_Tab:
+            parts.append("Tab")
+        elif key in (Qt.Key.Key_AsciiTilde, Qt.Key.Key_QuoteLeft):
+            parts.append("`")
+        else:
+            text = event.text().upper()
+            if text and text.isascii() and (text.isalnum() or text in "-=[];',./"):
+                parts.append(text)
+            else:
+                name = event.keyCombination().key().name.upper()
+                if name.startswith("KEY_"):
+                    name = name[4:]
+                if name:
+                    parts.append(name)
+
+        if parts:
+            self.setText("+".join(parts))
+
+
+class HotkeyDialog(QDialog):
+    """自定义全局呼出快捷键配置面板"""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("配置全局唤出快捷键")
+        self.setFixedSize(400, 260)
+        self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._init_ui()
+
+    def _init_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(14, 14, 14, 14)
+
+        container = QFrame(self)
+        container.setObjectName("hotkeyContainer")
+        container.setStyleSheet("""
+            #hotkeyContainer {
+                background-color: rgba(18, 24, 38, 250);
+                border: 1px solid rgba(56, 189, 248, 0.45);
+                border-radius: 12px;
+            }
+            QLabel {
+                color: #e2e8f0;
+                font-size: 13px;
+                font-family: 'Segoe UI', 'Microsoft YaHei';
+            }
+            QPushButton {
+                background: #0284c7;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 9px 16px;
+                font-size: 13px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background: #0369a1;
+            }
+        """)
+
+        form = QVBoxLayout(container)
+        form.setContentsMargins(20, 18, 20, 18)
+        form.setSpacing(12)
+
+        # 标题栏
+        header_box = QHBoxLayout()
+        title_label = QLabel("⌨️ 配置全局唤出快捷键", self)
+        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
+        close_btn = QPushButton("✕", self)
+        close_btn.setFixedSize(26, 26)
+        close_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #94a3b8;
+                font-size: 13px;
+                border-radius: 13px;
+                padding: 0;
+            }
+            QPushButton:hover {
+                background: rgba(239, 68, 68, 0.85);
+                color: white;
+            }
+        """)
+        close_btn.clicked.connect(self.close)
+        header_box.addWidget(title_label)
+        header_box.addStretch()
+        header_box.addWidget(close_btn)
+        form.addLayout(header_box)
+
+        tip = QLabel("点击下方输入框，在键盘上直接按下按键组合：")
+        tip.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        form.addWidget(tip)
+
+        # 快捷键捕获框
+        self.hotkey_edit = HotkeyEdit(self)
+        cur_hotkey = config_manager.get("hotkey_summon", "Alt+R")
+        self.hotkey_edit.setText(cur_hotkey)
+        form.addWidget(self.hotkey_edit)
+
+        sub_tip = QLabel("支持 Alt、Ctrl、Shift 组合键及 F1~F12、Space 等")
+        sub_tip.setStyleSheet("color: #64748b; font-size: 11px;")
+        form.addWidget(sub_tip)
+
+        save_btn = QPushButton("保存并立即生效", self)
+        save_btn.setFixedHeight(38)
+        save_btn.clicked.connect(self._save_and_apply)
+        form.addWidget(save_btn)
+
+        main_layout.addWidget(container)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.MouseButton.LeftButton and hasattr(self, "_drag_pos"):
+            self.move(event.globalPosition().toPoint() - self._drag_pos)
+            event.accept()
+
+    def _save_and_apply(self):
+        new_key = self.hotkey_edit.text().strip()
+        if not new_key:
+            return
+        if self.parent() and hasattr(self.parent(), "reload_hotkey"):
+            self.parent().reload_hotkey(new_key)
         self.accept()
 
 
@@ -748,6 +947,21 @@ class GlassWindow(QWidget):
     def open_api_settings(self):
         dialog = ApiConfigDialog(self)
         dialog.exec()
+
+    def open_hotkey_settings(self):
+        dialog = HotkeyDialog(self)
+        dialog.exec()
+
+    def reload_hotkey(self, new_hotkey: str):
+        config_manager.set("hotkey_summon", new_hotkey)
+        if hasattr(self, "hotkey_thread") and self.hotkey_thread:
+            self.hotkey_thread.stop()
+        from global_hotkey import GlobalHotkeyThread
+        self.hotkey_thread = GlobalHotkeyThread(hotkey_str=new_hotkey)
+        self.hotkey_thread.hotkey_triggered.connect(self.toggle_summon)
+        self.hotkey_thread.start()
+        if hasattr(self, "tray_manager") and self.tray_manager:
+            self.tray_manager.sync_states()
 
     def open_settings(self):
         self.open_api_settings()

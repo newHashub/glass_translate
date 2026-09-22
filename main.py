@@ -48,13 +48,17 @@ def main():
     tray_manager = TrayManager(window)
     window.tray_manager = tray_manager
 
-    # 创建并启动全局 Alt+R 热键监听线程
-    hotkey_thread = GlobalHotkeyThread(key_char="R", use_alt=True)
+    # 启动配置中指定的全局唤出热键监听线程 (默认 Alt+R)
+    from config import config_manager
+    current_hotkey = config_manager.get("hotkey_summon", "Alt+R")
+    hotkey_thread = GlobalHotkeyThread(hotkey_str=current_hotkey)
     hotkey_thread.hotkey_triggered.connect(window.toggle_summon)
     hotkey_thread.start()
+    window.hotkey_thread = hotkey_thread
 
     def on_about_to_quit():
-        hotkey_thread.stop()
+        if hasattr(window, "hotkey_thread") and window.hotkey_thread:
+            window.hotkey_thread.stop()
         if hasattr(window, "worker") and window.worker:
             window.worker.stop()
 
