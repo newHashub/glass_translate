@@ -12,7 +12,7 @@ taskkill /f /im GlassTranslate.exe >nul 2>nul
 py -3 -m PyInstaller --onedir --noconsole --name "GlassTranslate" --icon="app_icon.ico" --add-data="app_icon.ico;." --clean -y main.py
 
 echo [4/4] 正在创建/更新极速秒开快捷方式 (GlassTranslate.lnk)...
-powershell -NoProfile -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut((Resolve-Path 'GlassTranslate.lnk' -ErrorAction SilentlyContinue)); if(!$s){$s=(New-Object -COM WScript.Shell).CreateShortcut((Join-Path (Get-Location) 'GlassTranslate.lnk'))}; $s.TargetPath=(Join-Path (Get-Location) 'dist\GlassTranslate\GlassTranslate.exe'); $s.WorkingDirectory=(Join-Path (Get-Location) 'dist\GlassTranslate'); $s.IconLocation=(Join-Path (Get-Location) 'app_icon.ico'); $s.Description='Windows 实时透视翻译器 (秒开版)'; $s.Save()"
+py -3 -c "import win32com.client, os; w = win32com.client.Dispatch('WScript.Shell'); s = w.CreateShortcut(os.path.abspath('GlassTranslate.lnk')); s.TargetPath = os.path.abspath('dist/GlassTranslate/GlassTranslate.exe'); s.WorkingDirectory = os.path.abspath('dist/GlassTranslate'); s.IconLocation = os.path.abspath('app_icon.ico'); s.Description = 'Windows 实时透视翻译器 (秒开版)'; s.Save()"
 
 echo.
 if exist "dist\GlassTranslate\GlassTranslate.exe" (
