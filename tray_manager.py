@@ -85,25 +85,25 @@ class TrayManager:
 
         self.menu.addSeparator()
 
-        # 2. 实时翻译开关
+        # 2. 实时翻译与单次刷新
         self.action_auto = QAction("⏸️ 实时自动翻译", self.menu)
         self.action_auto.setCheckable(True)
         self.action_auto.setChecked(config_manager.get("auto_translate", True))
         self.action_auto.triggered.connect(self._toggle_auto_translate)
         self.menu.addAction(self.action_auto)
 
-        # 3. 立即刷新一次
         action_refresh = QAction("⚡ 立即识别刷新", self.menu)
         action_refresh.triggered.connect(self.window.trigger_refresh)
         self.menu.addAction(action_refresh)
 
         self.menu.addSeparator()
 
-        # 4. 语言选择子菜单
+        # 3. 语言选择子菜单
         lang_menu = self.menu.addMenu("🌐 翻译语言")
         lang_menu.setStyleSheet(self.menu.styleSheet())
-        lang_group = QActionGroup(self.menu)
-        lang_group.setExclusive(True)
+        self.lang_group = QActionGroup(self.menu)
+        self.lang_group.setExclusive(True)
+        self.lang_actions = []
 
         lang_options = [
             ("自动 ➔ 中文", "auto", "zh-CN"),
@@ -111,7 +111,6 @@ class TrayManager:
             ("日文 ➔ 中文", "ja", "zh-CN"),
             ("中文 ➔ 英文", "zh", "en"),
         ]
-
         cur_src = config_manager.get("source_lang", "auto")
         cur_tgt = config_manager.get("target_lang", "zh-CN")
 
@@ -122,78 +121,206 @@ class TrayManager:
             if cur_src == src and cur_tgt == tgt:
                 act.setChecked(True)
             act.triggered.connect(lambda checked, s=src, t=tgt: self._set_language(s, t))
-            lang_group.addAction(act)
+            self.lang_group.addAction(act)
             lang_menu.addAction(act)
+            self.lang_actions.append(act)
+
+        # 4. 翻译引擎子菜单
+        engine_menu = self.menu.addMenu("🚀 翻译引擎")
+        engine_menu.setStyleSheet(self.menu.styleSheet())
+        self.engine_group = QActionGroup(self.menu)
+        self.engine_group.setExclusive(True)
+        self.engine_actions = []
+
+        engine_options = [
+            ("⚡ 有道官方直连 (毫秒级·免Key)", "youdao"),
+            ("🌐 MyMemory (免费备用通道)", "mymemory"),
+            ("🤖 自定义大模型 (OpenAI协议)", "openai"),
+        ]
+        cur_engine = config_manager.get("engine", "youdao")
+        for label, eng_id in engine_options:
+            act = QAction(label, engine_menu)
+            act.setCheckable(True)
+            act.setData(eng_id)
+            if cur_engine == eng_id:
+                act.setChecked(True)
+            act.triggered.connect(lambda checked, eid=eng_id: self._set_engine(eid))
+            self.engine_group.addAction(act)
+            engine_menu.addAction(act)
+            self.engine_actions.append(act)
 
         # 5. 显示模式子菜单
         mode_menu = self.menu.addMenu("🔤 显示模式")
         mode_menu.setStyleSheet(self.menu.styleSheet())
-        mode_group = QActionGroup(self.menu)
-        mode_group.setExclusive(True)
+        self.mode_group = QActionGroup(self.menu)
+        self.mode_group.setExclusive(True)
+        self.mode_actions = []
 
         cur_mode = config_manager.get("display_mode", "inplace")
         act_inplace = QAction("原地文字替换 (完全透明覆盖)", mode_menu)
         act_inplace.setCheckable(True)
+        act_inplace.setData("inplace")
         act_inplace.setChecked(cur_mode == "inplace")
-        act_inplace.triggered.connect(lambda: self.window.apply_mode("inplace"))
-        mode_group.addAction(act_inplace)
+        act_inplace.triggered.connect(lambda: self._set_display_mode("inplace"))
+        self.mode_group.addAction(act_inplace)
         mode_menu.addAction(act_inplace)
+        self.mode_actions.append(act_inplace)
 
         act_card = QAction("悬浮卡片字幕 (独立卡片气泡)", mode_menu)
         act_card.setCheckable(True)
+        act_card.setData("card")
         act_card.setChecked(cur_mode == "card")
-        act_card.triggered.connect(lambda: self.window.apply_mode("card"))
-        mode_group.addAction(act_card)
+        act_card.triggered.connect(lambda: self._set_display_mode("card"))
+        self.mode_group.addAction(act_card)
         mode_menu.addAction(act_card)
+        self.mode_actions.append(act_card)
 
-        # 6. 框内滚轮缩放开关
+        # 6. 译文字号自适应缩放子菜单
+        font_menu = self.menu.addMenu("🔍 译文字号")
+        font_menu.setStyleSheet(self.menu.styleSheet())
+        self.font_group = QActionGroup(self.menu)
+        self.font_group.setExclusive(True)
+        self.font_actions = []
+
+        cur_scale = config_manager.get("font_scale", 1.0)
+        font_options = [
+            ("紧凑 (85%)", 0.85),
+            ("标准 (100% 默认)", 1.0),
+            ("稍大 (115%)", 1.15),
+            ("醒目 (130%)", 1.30),
+        ]
+        for label, val in font_options:
+            act = QAction(label, font_menu)
+            act.setCheckable(True)
+            act.setData(val)
+            if abs(cur_scale - val) < 0.05:
+                act.setChecked(True)
+            act.triggered.connect(lambda checked, v=val: self._set_font_scale(v))
+            self.font_group.addAction(act)
+            font_menu.addAction(act)
+            self.font_actions.append(act)
+
+        # 7. 扫描频率子菜单
+        speed_menu = self.menu.addMenu("⏱️ 识别频率")
+        speed_menu.setStyleSheet(self.menu.styleSheet())
+        self.speed_group = QActionGroup(self.menu)
+        self.speed_group.setExclusive(True)
+        self.speed_actions = []
+
+        cur_interval = config_manager.get("scan_interval_ms", 300)
+        speed_options = [
+            ("⚡ 极速 (200ms)", 200),
+            ("🚀 均衡 (300ms 默认)", 300),
+            ("🍃 节能 (600ms)", 600),
+            ("🐢 慢速 (1000ms)", 1000),
+        ]
+        for label, val in speed_options:
+            act = QAction(label, speed_menu)
+            act.setCheckable(True)
+            act.setData(val)
+            if cur_interval == val:
+                act.setChecked(True)
+            act.triggered.connect(lambda checked, v=val: self._set_interval(v))
+            self.speed_group.addAction(act)
+            speed_menu.addAction(act)
+            self.speed_actions.append(act)
+
+        self.menu.addSeparator()
+
+        # 8. 交互快捷开关
         self.action_wheel_zoom = QAction("🖱️ 框内滚轮缩放窗口", self.menu)
         self.action_wheel_zoom.setCheckable(True)
         self.action_wheel_zoom.setChecked(config_manager.get("wheel_zoom_enabled", True))
         self.action_wheel_zoom.triggered.connect(self._toggle_wheel_zoom)
         self.menu.addAction(self.action_wheel_zoom)
 
-        # 7. 底部状态提示开关
         self.action_status_pill = QAction("💡 显示底部状态提示", self.menu)
         self.action_status_pill.setCheckable(True)
         self.action_status_pill.setChecked(config_manager.get("show_status_pill", False))
         self.action_status_pill.triggered.connect(self._toggle_status_pill)
         self.menu.addAction(self.action_status_pill)
 
-        # 8. 置顶开关
         self.action_pin = QAction("📌 窗口始终置顶", self.menu)
         self.action_pin.setCheckable(True)
         self.action_pin.setChecked(config_manager.get("always_on_top", True))
         self.action_pin.triggered.connect(self._toggle_always_on_top)
         self.menu.addAction(self.action_pin)
 
-        # 9. 复制最新译文
+        self.menu.addSeparator()
+
+        # 9. 复制译文与 API 配置
         action_copy = QAction("📋 复制最新译文", self.menu)
         action_copy.triggered.connect(self.window.copy_translation)
         self.menu.addAction(action_copy)
 
-        self.menu.addSeparator()
-
-        # 10. 偏好设置
-        action_settings = QAction("⚙️ 偏好设置...", self.menu)
-        action_settings.triggered.connect(self.window.open_settings)
-        self.menu.addAction(action_settings)
+        action_api = QAction("🔑 自定义 API 配置...", self.menu)
+        action_api.triggered.connect(self.window.open_api_settings)
+        self.menu.addAction(action_api)
 
         self.menu.addSeparator()
 
-        # 11. 退出程序
+        # 10. 退出程序
         action_quit = QAction("❌ 退出程序", self.menu)
         action_quit.triggered.connect(self._quit_app)
         self.menu.addAction(action_quit)
 
     def sync_states(self):
-        """同步菜单选中状态"""
+        """同步菜单所有单选与多选选中状态"""
         self.action_toggle.setChecked(self.window.isVisible())
         self.action_auto.setChecked(config_manager.get("auto_translate", True))
         self.action_wheel_zoom.setChecked(config_manager.get("wheel_zoom_enabled", True))
         self.action_status_pill.setChecked(config_manager.get("show_status_pill", False))
         self.action_pin.setChecked(config_manager.get("always_on_top", True))
 
+        # 同步语种
+        cur_src = config_manager.get("source_lang", "auto")
+        cur_tgt = config_manager.get("target_lang", "zh-CN")
+        for act in getattr(self, "lang_actions", []):
+            src, tgt = act.data()
+            act.setChecked(cur_src == src and cur_tgt == tgt)
+
+        # 同步引擎
+        cur_eng = config_manager.get("engine", "youdao")
+        for act in getattr(self, "engine_actions", []):
+            act.setChecked(act.data() == cur_eng)
+
+        # 同步显示模式
+        cur_mode = config_manager.get("display_mode", "inplace")
+        for act in getattr(self, "mode_actions", []):
+            act.setChecked(act.data() == cur_mode)
+
+        # 同步字号缩放
+        cur_scale = config_manager.get("font_scale", 1.0)
+        for act in getattr(self, "font_actions", []):
+            act.setChecked(abs(act.data() - cur_scale) < 0.05)
+
+        # 同步扫描频率
+        cur_interval = config_manager.get("scan_interval_ms", 300)
+        for act in getattr(self, "speed_actions", []):
+            act.setChecked(act.data() == cur_interval)
+
+    def _set_engine(self, engine_id: str):
+        config_manager.set("engine", engine_id)
+        if engine_id == "openai":
+            # 若尚未配置自定义 Key，主动唤出配置面板
+            if not config_manager.get("api_key", "").strip():
+                self.window.open_api_settings()
+        self.sync_states()
+        self.window.trigger_refresh()
+
+    def _set_display_mode(self, mode: str):
+        config_manager.set("display_mode", mode)
+        self.window.apply_mode(mode)
+        self.sync_states()
+
+    def _set_font_scale(self, scale: float):
+        config_manager.set("font_scale", scale)
+        self.sync_states()
+        self.window.update()
+
+    def _set_interval(self, interval_ms: int):
+        config_manager.set("scan_interval_ms", interval_ms)
+        self.sync_states()
 
     def _toggle_wheel_zoom(self):
         enabled = self.action_wheel_zoom.isChecked()
@@ -204,7 +331,6 @@ class TrayManager:
         config_manager.set("show_status_pill", show)
         if hasattr(self.window, "set_show_status_pill"):
             self.window.set_show_status_pill(show)
-
 
     def _on_tray_activated(self, reason):
         if reason in [QSystemTrayIcon.ActivationReason.DoubleClick, QSystemTrayIcon.ActivationReason.Trigger]:
@@ -230,6 +356,7 @@ class TrayManager:
     def _set_language(self, src: str, tgt: str):
         config_manager.set("source_lang", src, auto_save=False)
         config_manager.set("target_lang", tgt, auto_save=True)
+        self.sync_states()
         self.window.trigger_refresh()
 
     def _toggle_always_on_top(self):

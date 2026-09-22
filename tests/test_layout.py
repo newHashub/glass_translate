@@ -58,3 +58,43 @@ def test_show_status_pill_config():
     assert config_manager.get("show_status_pill") is False
 
 
+def test_api_config_dialog_and_menu_sync(qapp):
+    from glass_window import ApiConfigDialog
+    from tray_manager import TrayManager
+    from PyQt6.QtWidgets import QWidget
+
+    class MockWindow(QWidget):
+        def __init__(self):
+            super().__init__()
+            self.refreshed = False
+        def trigger_refresh(self):
+            self.refreshed = True
+        def apply_mode(self, mode):
+            pass
+        def copy_translation(self):
+            pass
+        def open_api_settings(self):
+            pass
+        def set_auto_translate(self, b):
+            pass
+        def set_always_on_top(self, b):
+            pass
+
+    win = MockWindow()
+    tray = TrayManager(win)
+
+    # 测试修改引擎与同步
+    tray._set_engine("youdao")
+    assert config_manager.get("engine") == "youdao"
+    tray._set_font_scale(1.15)
+    assert abs(config_manager.get("font_scale") - 1.15) < 0.01
+    tray._set_interval(200)
+    assert config_manager.get("scan_interval_ms") == 200
+
+    # 测试 ApiConfigDialog 初始化与保存
+    dlg = ApiConfigDialog(win)
+    assert dlg.url_input.text()
+    assert dlg.model_input.text()
+    dlg.close()
+
+

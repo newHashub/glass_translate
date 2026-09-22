@@ -96,13 +96,13 @@ def layout_text_blocks(
     return items
 
 
-class SettingsDialog(QDialog):
-    """偏好与引擎设置面板"""
+class ApiConfigDialog(QDialog):
+    """自定义大模型 API 配置面板 (轻量专注，零冗余设置)"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("透视翻译器 - 偏好设置")
-        self.setFixedSize(400, 520)
+        self.setWindowTitle("自定义 API 配置")
+        self.setFixedSize(380, 310)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
@@ -113,9 +113,9 @@ class SettingsDialog(QDialog):
         main_layout.setContentsMargins(14, 14, 14, 14)
 
         container = QFrame(self)
-        container.setObjectName("settingsContainer")
+        container.setObjectName("apiContainer")
         container.setStyleSheet("""
-            #settingsContainer {
+            #apiContainer {
                 background-color: rgba(18, 24, 38, 248);
                 border: 1px solid rgba(56, 189, 248, 0.4);
                 border-radius: 12px;
@@ -125,26 +125,11 @@ class SettingsDialog(QDialog):
                 font-size: 13px;
                 font-family: 'Segoe UI', 'Microsoft YaHei';
             }
-            QSlider::groove:horizontal {
-                height: 5px;
-                background: rgba(255, 255, 255, 0.15);
-                border-radius: 2px;
-            }
-            QSlider::sub-page:horizontal {
-                background: #38bdf8;
-                border-radius: 2px;
-            }
-            QSlider::handle:horizontal {
-                background: #ffffff;
-                width: 14px;
-                margin: -4px 0;
-                border-radius: 7px;
-            }
-            QLineEdit, QComboBox {
+            QLineEdit {
                 background: rgba(255, 255, 255, 0.08);
                 border: 1px solid rgba(255, 255, 255, 0.18);
                 border-radius: 6px;
-                padding: 5px 8px;
+                padding: 6px 10px;
                 color: #ffffff;
                 font-size: 12px;
             }
@@ -153,7 +138,7 @@ class SettingsDialog(QDialog):
                 color: white;
                 border: none;
                 border-radius: 6px;
-                padding: 7px 14px;
+                padding: 8px 16px;
                 font-size: 13px;
             }
             QPushButton:hover {
@@ -163,20 +148,20 @@ class SettingsDialog(QDialog):
 
         form = QVBoxLayout(container)
         form.setContentsMargins(18, 16, 18, 16)
-        form.setSpacing(12)
+        form.setSpacing(10)
 
         # 标题栏
         header_box = QHBoxLayout()
-        title_label = QLabel("⚙️ 偏好设置", self)
-        title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
+        title_label = QLabel("🔑 自定义大模型 API 配置", self)
+        title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #38bdf8;")
         close_btn = QPushButton("✕", self)
-        close_btn.setFixedSize(26, 26)
+        close_btn.setFixedSize(24, 24)
         close_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
                 color: #94a3b8;
                 font-size: 13px;
-                border-radius: 13px;
+                border-radius: 12px;
                 padding: 0;
             }
             QPushButton:hover {
@@ -190,134 +175,50 @@ class SettingsDialog(QDialog):
         header_box.addWidget(close_btn)
         form.addLayout(header_box)
 
-        # 1. 显示模式
-        form.addWidget(QLabel("默认显示模式:"))
-        self.mode_combo = QComboBox()
-        self.mode_combo.addItem("🔤 原地文字替换 (完全透明覆盖)", "inplace")
-        self.mode_combo.addItem("📋 悬浮卡片字幕 (独立卡片气泡)", "card")
-        cur_mode = config_manager.get("display_mode", "inplace")
-        self.mode_combo.setCurrentIndex(0 if cur_mode == "inplace" else 1)
-        form.addWidget(self.mode_combo)
+        # 提示
+        tip = QLabel("兼容 OpenAI、DeepSeek、Ollama 等标准协议接口")
+        tip.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        form.addWidget(tip)
 
-        # 2. 扫描频率
-        interval_val = config_manager.get("scan_interval_ms", 300)
-        interval_label = QLabel(f"实时检测刷新间隔: {interval_val} ms (越小越灵敏)")
-        self.interval_slider = QSlider(Qt.Orientation.Horizontal)
-        self.interval_slider.setRange(100, 1500)
-        self.interval_slider.setSingleStep(50)
-        self.interval_slider.setValue(interval_val)
-
-        def on_interval_change(val):
-            interval_label.setText(f"实时检测刷新间隔: {val} ms (越小越灵敏)")
-            config_manager.set("scan_interval_ms", val)
-
-        self.interval_slider.valueChanged.connect(on_interval_change)
-        form.addWidget(interval_label)
-        form.addWidget(self.interval_slider)
-
-        # 3. 字体自适应缩放调节
-        scale_val = int(config_manager.get("font_scale", 1.0) * 100)
-        scale_label = QLabel(f"字号智能自适应缩放: {scale_val}% (最低保证清晰度)")
-        self.font_slider = QSlider(Qt.Orientation.Horizontal)
-        self.font_slider.setRange(80, 140)
-        self.font_slider.setValue(scale_val)
-
-        def on_font_scale_change(val):
-            scale_label.setText(f"字号智能自适应缩放: {val}% (最低保证清晰度)")
-            config_manager.set("font_scale", val / 100.0)
-            if self.parent():
-                self.parent().update()
-
-        self.font_slider.valueChanged.connect(on_font_scale_change)
-        form.addWidget(scale_label)
-        form.addWidget(self.font_slider)
-
-        # 4. 翻译引擎选择
-        form.addWidget(QLabel("翻译后端服务:"))
-        self.engine_combo = QComboBox()
-        self.engine_combo.addItem("Youdao (极速毫秒级·实时推荐)", "youdao")
-        self.engine_combo.addItem("MyMemory (免费备用)", "mymemory")
-        self.engine_combo.addItem("自定义大模型/OpenAI协议", "openai")
-        current_eng = config_manager.get("engine", "youdao")
-        idx = self.engine_combo.findData(current_eng)
-        if idx >= 0:
-            self.engine_combo.setCurrentIndex(idx)
-        form.addWidget(self.engine_combo)
-
-        # 自定义 API 配置区
-        self.api_widget = QWidget()
-        api_layout = QVBoxLayout(self.api_widget)
-        api_layout.setContentsMargins(0, 0, 0, 0)
-        api_layout.setSpacing(4)
-
+        form.addWidget(QLabel("API 端点 (URL):"))
         self.url_input = QLineEdit()
-        self.url_input.setPlaceholderText("API URL (例: https://api.openai.com/v1/chat/completions)")
-        self.url_input.setText(config_manager.get("api_url", ""))
+        self.url_input.setPlaceholderText("https://api.openai.com/v1/chat/completions")
+        self.url_input.setText(config_manager.get("api_url", "https://api.openai.com/v1/chat/completions"))
+        form.addWidget(self.url_input)
 
+        form.addWidget(QLabel("API 密钥 (Key):"))
         self.key_input = QLineEdit()
         self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.key_input.setPlaceholderText("API Key (sk-...)")
+        self.key_input.setPlaceholderText("sk-...")
         self.key_input.setText(config_manager.get("api_key", ""))
+        form.addWidget(self.key_input)
 
+        form.addWidget(QLabel("模型名称 (Model):"))
         self.model_input = QLineEdit()
-        self.model_input.setPlaceholderText("Model (例: gpt-4o-mini 或 deepseek-chat)")
+        self.model_input.setPlaceholderText("gpt-4o-mini 或 deepseek-chat")
         self.model_input.setText(config_manager.get("api_model", "gpt-4o-mini"))
+        form.addWidget(self.model_input)
 
-        api_layout.addWidget(QLabel("API 端点:"))
-        api_layout.addWidget(self.url_input)
-        api_layout.addWidget(QLabel("API Key:"))
-        api_layout.addWidget(self.key_input)
-        api_layout.addWidget(QLabel("模型名称:"))
-        api_layout.addWidget(self.model_input)
-
-        form.addWidget(self.api_widget)
-
-        def toggle_api_inputs(i):
-            is_openai = self.engine_combo.currentData() == "openai"
-            self.api_widget.setVisible(is_openai)
-            config_manager.set("engine", self.engine_combo.currentData())
-
-        self.engine_combo.currentIndexChanged.connect(toggle_api_inputs)
-        self.api_widget.setVisible(current_eng == "openai")
-
-        # 5. 交互选项与快捷键提示
-        self.wheel_check = QCheckBox("启用鼠标在玻璃框内直接滑动滚轮缩放视窗大小")
-        self.wheel_check.setStyleSheet("color: #e2e8f0; font-size: 12px; margin-top: 4px;")
-        self.wheel_check.setChecked(config_manager.get("wheel_zoom_enabled", True))
-        form.addWidget(self.wheel_check)
-
-        self.status_pill_check = QCheckBox("显示底部状态提示胶囊 (翻译进度/异常原因反馈)")
-        self.status_pill_check.setStyleSheet("color: #e2e8f0; font-size: 12px; margin-top: 2px;")
-        self.status_pill_check.setChecked(config_manager.get("show_status_pill", False))
-        form.addWidget(self.status_pill_check)
-
-
-        tip_label = QLabel("💡 快捷键提示: 全局按 Alt + R 可快速在鼠标处呼出/收起窗口")
-        tip_label.setStyleSheet("color: #38bdf8; font-size: 11px; margin-bottom: 4px;")
-        form.addWidget(tip_label)
-
-        save_btn = QPushButton("确定并保存", self)
+        save_btn = QPushButton("确定并启用自定义大模型", self)
         save_btn.clicked.connect(self._save_and_close)
         form.addWidget(save_btn)
 
         main_layout.addWidget(container)
 
     def _save_and_close(self):
-        new_mode = self.mode_combo.currentData()
-        config_manager.set("display_mode", new_mode)
-        config_manager.set("engine", self.engine_combo.currentData())
-        config_manager.set("api_url", self.url_input.text().strip())
-        config_manager.set("api_key", self.key_input.text().strip())
-        config_manager.set("api_model", self.model_input.text().strip())
-        config_manager.set("wheel_zoom_enabled", self.wheel_check.isChecked())
-        show_pill = self.status_pill_check.isChecked()
-        config_manager.set("show_status_pill", show_pill)
-        config_manager.save()
+        config_manager.set("api_url", self.url_input.text().strip(), auto_save=False)
+        config_manager.set("api_key", self.key_input.text().strip(), auto_save=False)
+        config_manager.set("api_model", self.model_input.text().strip(), auto_save=False)
+        config_manager.set("engine", "openai", auto_save=True)
         if self.parent():
-            self.parent().apply_mode(new_mode)
-            if hasattr(self.parent(), "set_show_status_pill"):
-                self.parent().set_show_status_pill(show_pill)
+            if hasattr(self.parent(), "tray_manager") and self.parent().tray_manager:
+                self.parent().tray_manager.sync_states()
+            self.parent().trigger_refresh()
         self.accept()
+
+
+# 保持向后兼容别名
+SettingsDialog = ApiConfigDialog
 
 
 
@@ -844,9 +745,12 @@ class GlassWindow(QWidget):
         if text and not text.startswith("🪟"):
             QApplication.clipboard().setText(text)
 
-    def open_settings(self):
-        dialog = SettingsDialog(self)
+    def open_api_settings(self):
+        dialog = ApiConfigDialog(self)
         dialog.exec()
+
+    def open_settings(self):
+        self.open_api_settings()
 
     @pyqtSlot(str, str, list, tuple)
     def _on_result_ready(self, original: str, translated: str, blocks: list, img_size: tuple):
