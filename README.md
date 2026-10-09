@@ -18,6 +18,14 @@
 
 [✨ 核心特性](#-核心特性) • [🚀 快速开始](#-快速开始) • [🎮 交互与快捷键](#-交互与快捷键) • [⚙️ 右键控制中心](#️-右键控制中心概览) • [🏗️ 架构设计](#️-架构设计) • [❓ 常见问题](#-常见问题)
 
+<br/>
+
+<a href="docs/assets/GlassTranslate-Promo.mp4">
+  <img src="docs/assets/preview.gif" alt="GlassTranslate demo" width="860" />
+</a>
+
+**[▶️ 观看完整宣传视频 (46 秒)](docs/assets/GlassTranslate-Promo.mp4)**
+
 </div>
 
 ---
@@ -73,6 +81,8 @@
 - 配置窗口自适应舒适排版，模型输入与操作按钮完整舒展，支持鼠标无边框拖拽移动。
 
 > 📦 **普通用户开箱即用**：无需安装 Python 或配置任何环境，直接前往 [👉 GitHub Releases 发行页](https://github.com/newHashub/glass_translate/releases) 下载 `GlassTranslate-v1.0.0-Windows-x64.zip` 解压即用！
+
+> 🔍 **与同类工具的差异**：爱译客、WinLens、团子翻译器、LunaTranslator 等工具各有所长，GlassTranslate 主打「开源、轻量、免 Key、随手拖」。详见 [👉 同类工具对比](docs/COMPARISON.md)。
 
 ---
 

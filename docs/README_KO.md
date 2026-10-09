@@ -18,6 +18,14 @@
 
 [✨ 주요 기능](#-주요-기능) • [🚀 빠른 시작](#-빠른-시작) • [🎮 조작법 및 단축키](#-조작법-및-단축키) • [⚙️ 우클릭 제어판 안내](#️-우클릭-제어판-안내) • [🏗️ 아키텍처](#️-아키텍처) • [❓ 자주 묻는 질문](#-자주-묻는-질문)
 
+<br/>
+
+<a href="assets/GlassTranslate-Promo.mp4">
+  <img src="assets/preview.gif" alt="GlassTranslate demo" width="860" />
+</a>
+
+**[▶️ 전체 홍보 영상 보기 (46초, 중국어 자막)](assets/GlassTranslate-Promo.mp4)**
+
 </div>
 
 ---

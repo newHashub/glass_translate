@@ -18,6 +18,14 @@
 
 [✨ Key Features](#-key-features) • [🚀 Quick Start](#-quick-start) • [🎮 Shortcuts & Controls](#-shortcuts--controls) • [⚙️ Control Menu](#️-control-menu-overview) • [🏗️ Architecture](#️-architecture) • [❓ FAQ](#-faq)
 
+<br/>
+
+<a href="assets/GlassTranslate-Promo.mp4">
+  <img src="assets/preview.gif" alt="GlassTranslate demo" width="860" />
+</a>
+
+**[▶️ Watch the full promo video (46s, Chinese captions)](assets/GlassTranslate-Promo.mp4)**
+
 </div>
 
 ---

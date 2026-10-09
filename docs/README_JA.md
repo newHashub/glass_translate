@@ -18,6 +18,14 @@
 
 [✨ 主な特長](#-主な特長) • [🚀 クイックスタート](#-クイックスタート) • [🎮 操作方法とショートカット](#-操作方法とショートカット) • [⚙️ 右クリックメニュー一覧](#️-右クリックメニュー一覧) • [🏗️ アーキテクチャ](#️-アーキテクチャ) • [❓ よくある質問](#-よくある質問)
 
+<br/>
+
+<a href="assets/GlassTranslate-Promo.mp4">
+  <img src="assets/preview.gif" alt="GlassTranslate demo" width="860" />
+</a>
+
+**[▶️ プロモーション動画を見る（46 秒・中国語字幕）](assets/GlassTranslate-Promo.mp4)**
+
 </div>
 
 ---
