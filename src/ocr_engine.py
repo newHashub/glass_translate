@@ -9,6 +9,8 @@ class OcrEngine:
 
     def __init__(self):
         self._available_languages: Optional[List[str]] = None
+        # "自动" 模式下记住上一次识别成功的语言，下次优先尝试，避免每帧都多语言轮询
+        self._auto_sticky_tag: Optional[str] = None
 
     @property
     def available_languages(self) -> List[str]:
@@ -139,6 +141,100 @@ class OcrEngine:
 
         return "\n".join(merged)
 
+    # ---------------- "自动" 源语言的多识别器探测 ----------------
+    _RE_CJK = re.compile(r"[\u4e00-\u9fff]")
+    _RE_KANA = re.compile(r"[\u3040-\u30ff]")
+    _RE_HANGUL = re.compile(r"[\uac00-\ud7af]")
+    _RE_LATIN_WORD = re.compile(r"[A-Za-z]+")
+
+    @classmethod
+    def script_score(cls, text: str, lang_tag: str) -> float:
+        """评估识别结果与识别器语种的吻合度 (0~1)。
+        Windows OCR 是单语识别器：用英文模型读日文时会输出零碎的乱码字母，
+        用日文模型读日文时则会输出大量假名/汉字，据此判断哪个识别器"读懂了"。"""
+        chars = [c for c in text if not c.isspace()]
+        if not chars:
+            return 0.0
+        n = float(len(chars))
+        tag = lang_tag.lower()
+        if tag.startswith("ja"):
+            kana = len(cls._RE_KANA.findall(text))
+            han = len(cls._RE_CJK.findall(text))
+            # 没有假名时更可能是中文：压低到采纳阈值以下，让中文识别器参与比较
+            return (kana + han) / n * (1.0 if kana > 0 else 0.5)
+        if tag.startswith("zh"):
+            return len(cls._RE_CJK.findall(text)) / n
+        if tag.startswith("ko"):
+            return len(cls._RE_HANGUL.findall(text)) / n
+        # 拉丁语系：统计"像真实单词"的字母比例 (长度>=2 且含元音)
+        good = 0
+        for w in cls._RE_LATIN_WORD.findall(text):
+            if len(w) >= 2 and re.search(r"[aeiouyAEIOUY]", w):
+                good += len(w)
+            elif w.lower() in ("a", "i"):
+                good += 1
+        return good / n
+
+    def _auto_candidates(self) -> List[str]:
+        """自动模式下按优先级排列的候选识别器：上次成功 > 英文 > 日文 > 简体中文 > 韩文"""
+        langs = self.available_languages
+        order: List[str] = []
+
+        def pick(pred):
+            for tag in langs:
+                if pred(tag.lower()) and tag not in order:
+                    order.append(tag)
+                    return
+
+        if self._auto_sticky_tag and self._auto_sticky_tag in langs:
+            order.append(self._auto_sticky_tag)
+        pick(lambda t: t.startswith("en"))
+        pick(lambda t: t.startswith("ja"))
+        pick(lambda t: t.startswith("zh") and not any(k in t for k in ("hant", "tw", "hk")))
+        pick(lambda t: t.startswith("ko"))
+        if not order:
+            order.append(langs[0] if langs else "en-US")
+        return order
+
+    def _run_ocr(self, img: Image.Image, lang_tag: str):
+        """调用一次 Windows OCR，返回 winocr 结果对象 (失败抛异常)"""
+        import winocr
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(winocr.recognize_pil(img, lang_tag))
+        finally:
+            loop.close()
+
+    @staticmethod
+    def _result_text(res) -> str:
+        return "\n".join(l.text.strip() for l in getattr(res, "lines", []) if l.text.strip())
+
+    AUTO_ACCEPT_SCORE = 0.6
+
+    def _recognize_auto(self, img: Image.Image):
+        """自动模式：先试最可能的识别器，结果可信则直接采用；
+        否则依次尝试其他已安装的识别器，取吻合度最高者，并记住它供下一帧优先使用。"""
+        best = None  # (score, tag, res)
+        for tag in self._auto_candidates():
+            try:
+                res = self._run_ocr(img, tag)
+            except Exception as e:
+                print(f"[OcrEngine] 识别器 {tag} 异常: {e}")
+                continue
+            text = self._result_text(res)
+            if not text:
+                continue
+            score = self.script_score(text, tag)
+            if best is None or score > best[0]:
+                best = (score, tag, res)
+            if score >= self.AUTO_ACCEPT_SCORE:
+                break
+        if best is None:
+            return None, self._auto_candidates()[0]
+        self._auto_sticky_tag = best[1]
+        return best[2], best[1]
+
     def recognize(
         self, img: Image.Image, source_lang: str = "auto"
     ) -> Tuple[str, List[Dict[str, Any]]]:
@@ -146,17 +242,16 @@ class OcrEngine:
         执行 OCR 文字识别。
         返回: (merged_text, blocks)
         blocks 包含每个文本行的物理矩形坐标、文本内容以及自适应背景/文字颜色。
+        "自动" 源语言下会在已安装的 英/日/中/韩 识别器中自动挑选读得懂的那一个。
         """
-        lang_tag = self._resolve_lang_tag(source_lang)
-
         try:
-            import winocr
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res = loop.run_until_complete(winocr.recognize_pil(img, lang_tag))
-            finally:
-                loop.close()
+            if not source_lang or source_lang == "auto":
+                res, lang_tag = self._recognize_auto(img)
+                if res is None:
+                    return "", []
+            else:
+                lang_tag = self._resolve_lang_tag(source_lang)
+                res = self._run_ocr(img, lang_tag)
 
             blocks: List[Dict[str, Any]] = []
             raw_lines: List[str] = []
@@ -193,7 +288,7 @@ class OcrEngine:
                     "translated": "",
                 })
 
-            is_cjk = "zh" in lang_tag.lower() or "ja" in lang_tag.lower()
+            is_cjk = any(k in lang_tag.lower() for k in ("zh", "ja"))  # 韩文词间有空格，按拉丁规则拼接
             merged_text = self.clean_and_merge_lines(raw_lines, is_cjk=is_cjk)
             return merged_text, blocks
         except Exception as e:

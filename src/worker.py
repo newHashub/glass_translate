@@ -267,7 +267,7 @@ class TranslationWorker(QThread):
             # 4. 行级语义缓存极速探针：若框内所有行均已在缓存中，0ms 瞬间装配复用！
             all_cached = True
             for b in blocks:
-                cached_line = self.translator_engine.get_line_translation(b["text"])
+                cached_line = self.translator_engine.get_line_translation(b["text"], source_lang, target_lang)
                 if cached_line:
                     b["translated"] = cached_line
                 else:
@@ -279,6 +279,7 @@ class TranslationWorker(QThread):
                 self.result_ready.emit(
                     merged_text, translated_all, blocks, (img.width, img.height)
                 )
+                self._last_recognized_text = merged_text
                 self.status_changed.emit(f"✓ 缓存秒显 ({len(blocks)} 行)", "success")
                 time.sleep(sleep_sec)
                 continue
@@ -328,7 +329,7 @@ class TranslationWorker(QThread):
                     if t_val and is_valid_translation(b["text"], t_val, target_lang):
                         valid_count += 1
                     else:
-                        cached_l = self.translator_engine.get_line_translation(b["text"])
+                        cached_l = self.translator_engine.get_line_translation(b["text"], source_lang, target_lang)
                         if cached_l:
                             b["translated"] = cached_l
                             valid_count += 1
@@ -351,6 +352,9 @@ class TranslationWorker(QThread):
                 self.result_ready.emit(
                     merged_text, final_translated, blocks, (img.width, img.height)
                 )
+                # 仅在至少有一行翻译成功时记住本次文字；全部失败则下轮继续重试
+                if valid_count > 0:
+                    self._last_recognized_text = merged_text
 
                 if valid_count == 0 and len(blocks) > 0:
                     err_msg = self.translator_engine.last_error or "接口返回原文，未转换目标语言"

@@ -162,17 +162,28 @@ class TranslatorEngine:
             "Content-Type": "application/x-www-form-urlencoded",
         })
 
-    def get_line_translation(self, line: str) -> Optional[str]:
-        """查询单行/单句的行级语义缓存"""
-        k = norm_line_key(line)
-        if not k:
-            return None
-        return self._line_cache.get(k)
+    @staticmethod
+    def _line_ctx(src: str, tgt: str) -> str:
+        """行级缓存的上下文前缀：引擎 + 源语言 + 目标语言。
+        切换翻译语言或引擎后，旧译文不会再被误复用。"""
+        engine = config_manager.get("engine", "youdao")
+        return f"{engine}|{(src or 'auto').lower()}|{(tgt or 'zh-CN').lower()}|"
 
-    def set_line_translation(self, line: str, trans: str) -> None:
-        """存储单行/单句的行级语义缓存"""
-        k = norm_line_key(line)
-        if not k or not trans:
+    def get_line_translation(self, line: str, src: str = "auto", tgt: str = "zh-CN") -> Optional[str]:
+        """查询单行/单句的行级语义缓存 (按 引擎+语言对 隔离)"""
+        norm = norm_line_key(line)
+        if not norm:
+            return None
+        return self._line_cache.get(self._line_ctx(src, tgt) + norm)
+
+    def set_line_translation(self, line: str, trans: str, src: str = "auto", tgt: str = "zh-CN") -> None:
+        """存储单行/单句的行级语义缓存 (按 引擎+语言对 隔离)"""
+        norm = norm_line_key(line)
+        if not norm or not trans:
+            return
+        k = self._line_ctx(src, tgt) + norm
+        if k in self._line_cache:
+            self._line_cache[k] = trans.strip()
             return
         if len(self._line_cache_keys) >= self.cache_size * 2:
             old = self._line_cache_keys.pop(0)
@@ -242,7 +253,7 @@ class TranslatorEngine:
             assembled = []
             all_lines_cached = True
             for l in raw_lines:
-                cached_l = self.get_line_translation(l)
+                cached_l = self.get_line_translation(l, src_lang, tgt_lang)
                 if cached_l:
                     assembled.append(cached_l)
                 else:
@@ -279,7 +290,7 @@ class TranslatorEngine:
                             if idx_l < len(c_res_lines) and is_valid_translation(orig_l, c_res_lines[idx_l], tgt_lang):
                                 aligned.append(c_res_lines[idx_l])
                             else:
-                                cached_l = self.get_line_translation(orig_l)
+                                cached_l = self.get_line_translation(orig_l, src_lang, tgt_lang)
                                 if cached_l:
                                     aligned.append(cached_l)
                                 else:
@@ -297,9 +308,9 @@ class TranslatorEngine:
             if len(text_lines) == len(res_lines):
                 for orig_l, trans_l in zip(text_lines, res_lines):
                     if is_valid_translation(orig_l, trans_l, tgt_lang):
-                        self.set_line_translation(orig_l, trans_l)
+                        self.set_line_translation(orig_l, trans_l, src_lang, tgt_lang)
             elif len(text_lines) == 1 and len(res_lines) >= 1:
-                self.set_line_translation(text_lines[0], res_lines[0])
+                self.set_line_translation(text_lines[0], res_lines[0], src_lang, tgt_lang)
             return result
 
         return ""
