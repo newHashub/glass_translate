@@ -9,7 +9,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen)
 ![Startup](https://img.shields.io/badge/Startup-~0.6s%20(秒开)-blue)
 ![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
@@ -159,7 +159,7 @@ pip install -r requirements.txt
 - ⚡ **立即识别刷新** (手动强制触发扫描)
 - ✂️ **框选区域翻译** (与 `Alt + S` 相同，拖拽框选任意区域)
 - 🌐 **翻译语言 ➔** (包含英中、日中、韩中、法中、德中、俄中、西中、中英、中日、中韩等 **12 组快捷预设**，或点击 **“⚙️ 自定义自由选择...”** 呼出多语种任意互译面板)
-- 🚀 **翻译引擎 ➔** (⚡ 有道官方直连 [默认]、🌐 MyMemory 免费通道、🤖 自定义大模型)
+- 🚀 **翻译引擎 ➔** (⚡ 有道网页通道 [默认]、🌐 MyMemory 免费通道、🤖 自定义大模型)
 - 🔤 **显示模式 ➔** (原地文字替换 [默认] / 悬浮卡片字幕)
 - 🔍 **译文字号 ➔** (紧凑 85%、标准 100% [默认]、稍大 115%、醒目 130%)
 - ⏱️ **识别频率 ➔** (极速 200ms、均衡 300ms [默认]、节能 600ms、慢速 1000ms)
@@ -207,24 +207,26 @@ flowchart TD
 ### 目录结构说明
 ```
 glass_translate/
-├── main.py              # 主入口 (秒开呈现、控制台隐藏、热键初始化、生命周期管理)
-├── glass_window.py      # 玻璃质感透明视窗、自适应排版、事件状态机与设置弹窗
-├── worker.py            # 后台高响应工作线程 (去抖检测、缓存秒显探针、并行预热调度)
-├── capture_engine.py    # 屏幕捕获与图像像素变动差分检测引擎
-├── ocr_engine.py        # Windows 原生 OCR (WinRT) 封装与按需延迟探测
-├── translator_engine.py # 多引擎调度器 (移动端高速通道、长文本分块修补、行级语义缓存)
-├── global_hotkey.py     # Win32 RegisterHotKey 全局原生热键线程 (支持组合键解析与热重载)
-├── tray_manager.py      # 系统托盘图标管理与全局右键控制菜单 (图标单例缓存)
-├── win32_utils.py       # 防截屏穿透、DWM 圆角与高 DPI 感知
-├── config.py            # 本地配置管理器 (自适应缺省值与自动持久化)
-├── run.bat              # 便携智能启动批处理脚本 (优先秒开版)
-├── run.vbs              # 完全无黑框后台静默启动脚本
-├── build_exe.bat        # 一键打包生成秒开版原生应用与快捷方式脚本
-├── app_icon.ico         # 专属高分辨率玻璃质感应用图标
-├── requirements.txt     # 项目 Python 依赖库声明
-├── pytest.ini           # 单元测试自动化配置
-├── LICENSE              # MIT 开源许可证
-└── tests/               # 自动化单元测试套件 (覆盖排版、捕获、长文本分块、缓存、热键等)
+├── main.py                  # 打包与源码运行的入口，转到 src/main.py
+├── src/
+│   ├── main.py              # 启动流程 (控制台隐藏、托盘、全局热键、生命周期)
+│   ├── glass_window.py      # 透明取景窗、自适应排版、事件状态机与设置弹窗
+│   ├── region_select.py     # Alt+S 框选翻译的全屏选区遮罩 (支持多显示器)
+│   ├── worker.py            # 后台工作线程 (变动检测、缓存秒显、并行预热)
+│   ├── capture_engine.py    # 屏幕捕获与像素变动差分检测
+│   ├── ocr_engine.py        # Windows 原生 OCR 封装与"自动"语种识别
+│   ├── translator_engine.py # 多通道翻译调度 (分块补漏、行级缓存)
+│   ├── global_hotkey.py     # Win32 RegisterHotKey 全局热键线程
+│   ├── tray_manager.py      # 托盘图标与右键控制菜单
+│   ├── win32_utils.py       # 防自截屏、DWM 圆角与高 DPI 感知
+│   └── config.py            # 本地配置管理
+├── resources/app_icon.ico   # 应用图标
+├── scripts/                 # 快捷方式生成、发布打包、静默启动脚本
+├── docs/                    # 多语言 README、同类工具对比、演示素材
+├── tests/                   # pytest 测试 (离线运行)
+├── run.bat                  # 一键启动 (优先使用已打包的 exe)
+├── build_exe.bat            # 一键打包 exe、快捷方式与发布 ZIP
+└── requirements.txt         # Python 依赖
 ```
 
 ---
@@ -249,6 +251,11 @@ glass_translate/
 <details>
 <summary><b>Q4: 是否需要付费申请 API Key？</b></summary>
 不需要。默认的有道通道无需任何 API Key，开箱即用。但它使用的是有道网页端接口而非官方开放 API，高频使用时可能被限流或失效；如需长期稳定，建议在右键菜单 **🔑 自定义 API 配置...** 中填入自己的大模型 Key（DeepSeek 价格很低），或接入本地 Ollama 完全离线使用。
+</details>
+
+<details>
+<summary><b>Q5: 选了"自动"，为什么只识别出英文（日文、韩文没识别）？</b></summary>
+"自动"模式会在系统已安装的英、日、中、韩 OCR 识别器中挑选读得最好的一个，混排文字（如韩文夹英文）也能识别。但 Windows 只带有你所装语言的 OCR 识别器：如果没有安装日语或韩语，这两种文字就无法识别。安装方法：<b>设置 → 时间和语言 → 语言和区域 → 添加语言</b>，选择日语或韩语，勾选"光学字符识别"即可，无需切换系统显示语言。
 </details>
 
 ---

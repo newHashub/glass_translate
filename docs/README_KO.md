@@ -9,7 +9,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen)
 ![Startup](https://img.shields.io/badge/Startup-~0.6초%20(초고속%20실행)-blue)
 ![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
@@ -158,7 +158,7 @@ pip install -r requirements.txt
 - ⚡ **지금 즉시 인식 및 새로고침** (수동 강제 스캔)
 - ✂️ **영역 선택 번역** (`Alt + S`와 동일)
 - 🌐 **번역 언어 ➔** (12가지 퀵 프리셋, 또는 **`⚙️ 사용자 지정 언어 선택...`** 패널 호출)
-- 🚀 **번역 엔진 ➔** (⚡ 유도 공식 고속 회선 [기본값], 🌐 MyMemory 무료 채널, 🤖 커스텀 LLM API)
+- 🚀 **번역 엔진 ➔** (⚡ 유도 웹 채널 [기본값], 🌐 MyMemory 무료 채널, 🤖 커스텀 LLM API)
 - 🔤 **표시 모드 ➔** (제자리 텍스트 교체 [기본값] / 플로팅 자막 카드 모드)
 - 🔍 **글자 크기 ➔** (컴팩트 85%, 표준 100% [기본값], 크게 115%, 아주 크게 130%)
 - ⏱️ **스캔 주기 ➔** (초고속 200ms, 균형 300ms [기본값], 절전 600ms, 여유 1000ms)
@@ -223,6 +223,9 @@ A: 물론입니다. 우클릭 메뉴의 **🌐 번역 언어** ➔ **⚙️ 사�
 
 **Q: API 키가 필요한가요? 기본 채널은 안정적인가요?**  
 A: 키는 필요 없습니다. 다만 기본 유도 채널은 공식 API가 아닌 웹용 엔드포인트를 사용하므로, 사용량이 많으면 제한되거나 사이트 변경으로 작동하지 않을 수 있습니다. 안정성이 중요하다면 아래 방법으로 직접 LLM 키나 로컬 Ollama를 설정하세요.
+
+**Q: "자동"으로 설정했는데 영어만 인식되고 한국어나 일본어는 인식되지 않아요.**  
+A: "자동" 모드는 설치된 영어·일본어·중국어·한국어 OCR 인식기 중 가장 잘 읽는 것을 고르며, 영어가 섞인 한국어 문장도 인식합니다. 다만 Windows에는 추가한 언어의 OCR 인식기만 들어 있습니다. **설정 → 시간 및 언어 → 언어 및 지역 → 언어 추가**에서 한국어나 일본어를 추가하고 "광학 문자 인식"이 포함되었는지 확인하세요. 표시 언어를 바꿀 필요는 없습니다.
 
 **Q: 로컬 Ollama나 DeepSeek 모델과 연결할 수 있나요?**  
 A: 네, 지원합니다. 우클릭 후 **🔑 사용자 지정 API 설정...**을 클릭하고 엔드포인트 URL(예: Ollama의 경우 `http://localhost:11434/v1/chat/completions`, DeepSeek의 경우 `https://api.deepseek.com/v1/chat/completions`)과 API Key, 모델명을 입력하여 저장하면 됩니다.

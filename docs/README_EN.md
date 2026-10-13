@@ -9,7 +9,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen)
 ![Startup](https://img.shields.io/badge/Startup-~0.6s%20(Instant)-blue)
 ![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
@@ -158,7 +158,7 @@ Right-click anywhere inside the frame or on the tray icon in the Windows taskbar
 - ⚡ **Recognize Now** (Manually trigger a fresh capture)
 - ✂️ **Select Region to Translate** (same as `Alt + S`)
 - 🌐 **Translation Languages ➔** (12 quick presets, plus **`⚙️ Custom Language Selection...`** for free pairing)
-- 🚀 **Translation Engine ➔** (⚡ Youdao Fast Official [Default], 🌐 MyMemory Free Channel, 🤖 Custom LLM API)
+- 🚀 **Translation Engine ➔** (⚡ Youdao Web Channel [Default], 🌐 MyMemory Free Channel, 🤖 Custom LLM API)
 - 🔤 **Display Mode ➔** (In-Place Text Replacement [Default] / Floating Subtitle Card)
 - 🔍 **Font Scale ➔** (Compact 85%, Standard 100%, Larger 115%, Bold 130%)
 - ⏱️ **Scan Interval ➔** (Fast 200ms, Balanced 300ms [Default], Eco 600ms, Relaxed 1000ms)
@@ -205,19 +205,26 @@ flowchart TD
 ### Directory Tree
 ```
 glass_translate/
-├── main.py              # Application entry point (silent startup, tray & hotkey dispatch)
-├── glass_window.py      # Translucent viewport, custom dialogs, two-pass layout rendering
-├── tray_manager.py      # System tray icon, unified right-click control menu, state sync
-├── worker.py            # High-throughput background worker thread (debounce, caching probe)
-├── capture_engine.py    # Desktop capture & differential pixel comparison
-├── ocr_engine.py        # Windows WinRT native OCR with dynamic language tag resolution
-├── translator_engine.py # Multi-gateway engine with semantic caching and chunking
-├── config.py            # JSON configuration persistence & auto-save manager
-├── global_hotkey.py     # Win32 RegisterHotKey message listener thread
-├── win32_utils.py       # Acrylic blur, capture exclusion, and DWM window styling
-├── build_exe.bat        # Automated one-click standalone packaging script
-├── run.bat              # Rapid launcher script
-└── tests/               # Pytest automated test suite (21/21 passing)
+├── main.py                  # Entry point for both source runs and packaging; forwards to src/main.py
+├── src/
+│   ├── main.py              # Startup (hidden console, tray, global hotkeys, lifecycle)
+│   ├── glass_window.py      # Transparent viewfinder, adaptive layout, dialogs
+│   ├── region_select.py     # Full-screen overlay for Alt+S region select (multi-monitor)
+│   ├── worker.py            # Background worker (change detection, cache probe, pre-warming)
+│   ├── capture_engine.py    # Screen capture & pixel-diff change detection
+│   ├── ocr_engine.py        # Windows native OCR wrapper & "Auto" language detection
+│   ├── translator_engine.py # Multi-channel translation (chunking, line-level cache)
+│   ├── global_hotkey.py     # Win32 RegisterHotKey listener thread
+│   ├── tray_manager.py      # Tray icon & right-click control menu
+│   ├── win32_utils.py       # Capture exclusion, DWM styling, high-DPI awareness
+│   └── config.py            # Settings persistence
+├── resources/app_icon.ico   # App icon
+├── scripts/                 # Shortcut, release packaging and silent launch scripts
+├── docs/                    # Translated READMEs, comparison, demo assets
+├── tests/                   # pytest suite (runs offline)
+├── run.bat                  # Launcher (prefers the packaged exe)
+├── build_exe.bat            # One-click build: exe, shortcut, release ZIP
+└── requirements.txt         # Python dependencies
 ```
 
 ---
@@ -241,6 +248,9 @@ A: Open the right-click menu, select **🌐 Translation Languages**, and pick an
 
 **Q: Do I need an API key? Is the default channel reliable?**  
 A: No key is needed. However, the default Youdao channel relies on a public web endpoint rather than an official API, so it may be throttled under heavy use or stop working if the site changes. For dependable daily use, configure your own LLM key or a local Ollama model as described below.
+
+**Q: I chose "Auto" but only English is recognized. Why not Japanese or Korean?**  
+A: "Auto" picks the best of the installed English, Japanese, Chinese and Korean OCR recognizers, and handles mixed text such as Korean with English. But Windows only ships OCR recognizers for the languages you have installed. To add one, go to **Settings → Time & language → Language & region → Add a language**, choose Japanese or Korean, and make sure "Optical character recognition" is included. You don't need to change your display language.
 
 **Q: Can I connect to DeepSeek or a local Ollama model?**  
 A: Absolutely! Right-click and choose **🔑 Custom API Settings...**, select OpenAI compatibility, and enter your endpoint URL (e.g., `http://localhost:11434/v1/chat/completions` for Ollama or `https://api.deepseek.com/v1/chat/completions`).

@@ -9,7 +9,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-21%20Passed%20(100%25)-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen)
 ![Startup](https://img.shields.io/badge/Startup-~0.6秒%20(爆速起動)-blue)
 ![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
@@ -158,7 +158,7 @@ pip install -r requirements.txt
 - ⚡ **今すぐ認識して更新** (手動で強制スキャン)
 - ✂️ **範囲を選択して翻訳** (`Alt + S` と同じ)
 - 🌐 **翻訳言語 ➔** (12種類のプリセット、または **`⚙️ カスタム言語選択...`** で自由設定)
-- 🚀 **翻訳エンジン ➔** (⚡ 有道公式高速回線 [デフォルト]、🌐 MyMemory 無料回線、🤖 カスタム大規模言語モデル)
+- 🚀 **翻訳エンジン ➔** (⚡ 有道ウェブ回線 [デフォルト]、🌐 MyMemory 無料回線、🤖 カスタム大規模言語モデル)
 - 🔤 **表示モード ➔** (その場テキスト置換 [デフォルト] / フローティング字幕カード)
 - 🔍 **フォントサイズ ➔** (コンパクト 85%、標準 100%、やや大きめ 115%、特大 130%)
 - ⏱️ **認識間隔 ➔** (超高速 200ms、バランス 300ms [デフォルト]、省電力 600ms、ゆったり 1000ms)
@@ -223,6 +223,9 @@ A: もちろん可能です。右クリックメニューから **🌐 翻訳言
 
 **Q: API キーは必要ですか？デフォルト回線は安定していますか？**  
 A: キーは不要です。ただしデフォルトの有道回線は公式 API ではなくウェブ用エンドポイントを利用しているため、高頻度の利用で制限されたり、仕様変更で使えなくなる場合があります。安定性を重視する場合は、下記の方法で独自の LLM キーまたはローカル Ollama を設定してください。
+
+**Q: 「自動」にしても英語しか認識されません。日本語や韓国語が読み取れないのはなぜですか？**  
+A: 「自動」はインストール済みの英語・日本語・中国語・韓国語の OCR 認識エンジンから最適なものを選び、英語混じりの文章にも対応します。ただし Windows には追加した言語の OCR 認識エンジンしか入っていません。**設定 → 時刻と言語 → 言語と地域 → 言語を追加** で日本語や韓国語を追加し、「光学式文字認識」を含めてインストールしてください。表示言語を切り替える必要はありません。
 
 **Q: ローカルの Ollama や DeepSeek API に繋ぐことはできますか？**  
 A: 可能です。右クリックの **🔑 カスタム API 設定...** を開き、エンドポイントURL（例: Ollama の場合は `http://localhost:11434/v1/chat/completions`、DeepSeek の場合は `https://api.deepseek.com/v1/chat/completions`）と API キー、モデル名を入力して保存するだけで連携できます。

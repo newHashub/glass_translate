@@ -183,7 +183,7 @@ class TrayManager:
         self.engine_actions = []
 
         engine_options = [
-            ("⚡ 有道官方直连 (毫秒级·免Key)", "youdao"),
+            ("⚡ 有道网页通道 (毫秒级·免Key)", "youdao"),
             ("🌐 MyMemory (免费备用通道)", "mymemory"),
             ("🤖 自定义大模型 (OpenAI协议)", "openai"),
         ]
