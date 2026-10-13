@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
     datas=[('resources/app_icon.ico', 'resources')],
     hiddenimports=[],
