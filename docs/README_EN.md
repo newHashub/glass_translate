@@ -74,8 +74,10 @@ When reading foreign research papers, browsing overseas technical documentation,
 
 ### 7. 🚀 Millisecond Dual-Channel Translation Pipeline
 - **Windows Hardware-Accelerated OCR**: Native WinRT OCR processes high-resolution crops in **10~20ms** with virtually zero CPU overhead.
-- **High-Throughput Main Channel**: Youdao Mobile official gateway responds in **50~90ms** without triggering 411 rate limits.
-- **Multi-Tier Automated Failover**: Mobile Gateway ➔ aidemo Circuit-Breaker ➔ MyMemory Multilingual Fallback ➔ Custom LLM (OpenAI / DeepSeek / Ollama).
+- **Key-Free Default Channel**: The Youdao mobile web endpoint typically responds in **50~90ms** and is less prone to `411` throttling than the aidemo endpoint.
+- **Multi-Tier Automated Failover**: Mobile Gateway ➔ aidemo (30s cool-down after throttling) ➔ MyMemory Multilingual Fallback.
+
+> ⚠️ **About the default channel**: The default Youdao channel uses Youdao's public web endpoint, **not an official open API**. It works without a key, but heavy use may be rate-limited, and it can break if the website changes. For long-term reliability, open **🔑 Custom API Settings...** from the right-click menu and connect an LLM such as DeepSeek or OpenAI, or a local Ollama model (fully offline).
 
 ### 8. 🖱️ 8-Direction Edge Resizing & In-Frame Wheel Zoom
 - **Smooth Edge Sensing**: Hovering within 14px of any edge or corner smoothly transitions the cursor to resize handles.
@@ -138,6 +140,7 @@ To recompile the standalone native executable after modifying code:
 | Shortcut / Action | Description |
 | :--- | :--- |
 | **Alt + R (or custom hotkey)** | **Global Summon/Dismiss**: Show or hide the translation viewfinder at cursor position |
+| **Alt + S (or custom hotkey)** | **Region Select**: The screen dims; drag a rectangle with the left button and the viewfinder snaps to it and translates immediately. Esc or right-click to cancel |
 | **Left-Click & Drag Inside Frame** | Smoothly moves the lens; clears frame on press and anchors translated text on release |
 | **Hover & Drag on Edges/Corners** | 8-direction smooth sizing of the lens viewport |
 | **Mouse Wheel Inside Frame** | Fast anchor-centered zooming of viewfinder size (toggleable in menu) |
@@ -153,6 +156,7 @@ Right-click anywhere inside the frame or on the tray icon in the Windows taskbar
 - 🪟 **Show / Hide Viewfinder**
 - ⏸️ **Real-time Auto Translation** (Enable/Pause automated scanning)
 - ⚡ **Recognize Now** (Manually trigger a fresh capture)
+- ✂️ **Select Region to Translate** (same as `Alt + S`)
 - 🌐 **Translation Languages ➔** (12 quick presets, plus **`⚙️ Custom Language Selection...`** for free pairing)
 - 🚀 **Translation Engine ➔** (⚡ Youdao Fast Official [Default], 🌐 MyMemory Free Channel, 🤖 Custom LLM API)
 - 🔤 **Display Mode ➔** (In-Place Text Replacement [Default] / Floating Subtitle Card)
@@ -234,6 +238,9 @@ A: Yes! Simply place the transparent window over subtitles or game dialogues. Th
 
 **Q: What if the translation doesn't match my target language?**  
 A: Open the right-click menu, select **🌐 Translation Languages**, and pick any of the 12 presets or click **⚙️ Custom Language Selection...** to pair any source and target language freely.
+
+**Q: Do I need an API key? Is the default channel reliable?**  
+A: No key is needed. However, the default Youdao channel relies on a public web endpoint rather than an official API, so it may be throttled under heavy use or stop working if the site changes. For dependable daily use, configure your own LLM key or a local Ollama model as described below.
 
 **Q: Can I connect to DeepSeek or a local Ollama model?**  
 A: Absolutely! Right-click and choose **🔑 Custom API Settings...**, select OpenAI compatibility, and enter your endpoint URL (e.g., `http://localhost:11434/v1/chat/completions` for Ollama or `https://api.deepseek.com/v1/chat/completions`).

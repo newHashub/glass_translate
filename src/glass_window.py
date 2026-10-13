@@ -309,9 +309,11 @@ class HotkeyEdit(QLineEdit):
 class HotkeyDialog(QDialog):
     """自定义全局呼出快捷键配置面板"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, config_key: str = "hotkey_summon", title: str = "⌨️ 配置全局唤出快捷键"):
         super().__init__(parent)
-        self.setWindowTitle("配置全局唤出快捷键")
+        self.config_key = config_key
+        self.title_text = title
+        self.setWindowTitle(title)
         self.setFixedSize(400, 260)
         self.setWindowFlags(Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
@@ -354,7 +356,7 @@ class HotkeyDialog(QDialog):
 
         # 标题栏
         header_box = QHBoxLayout()
-        title_label = QLabel("⌨️ 配置全局唤出快捷键", self)
+        title_label = QLabel(self.title_text, self)
         title_label.setStyleSheet("font-size: 15px; font-weight: bold; color: #38bdf8;")
         close_btn = QPushButton("✕", self)
         close_btn.setFixedSize(26, 26)
@@ -383,13 +385,17 @@ class HotkeyDialog(QDialog):
 
         # 快捷键捕获框
         self.hotkey_edit = HotkeyEdit(self)
-        cur_hotkey = config_manager.get("hotkey_summon", "Alt+R")
+        cur_hotkey = config_manager.get(self.config_key)
         self.hotkey_edit.setText(cur_hotkey)
         form.addWidget(self.hotkey_edit)
 
         sub_tip = QLabel("支持 Alt、Ctrl、Shift 组合键及 F1~F12、Space 等")
         sub_tip.setStyleSheet("color: #64748b; font-size: 11px;")
         form.addWidget(sub_tip)
+
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: #f87171; font-size: 11px;")
+        form.addWidget(self.error_label)
 
         save_btn = QPushButton("保存并立即生效", self)
         save_btn.setFixedHeight(38)
@@ -412,8 +418,16 @@ class HotkeyDialog(QDialog):
         new_key = self.hotkey_edit.text().strip()
         if not new_key:
             return
-        if self.parent() and hasattr(self.parent(), "reload_hotkey"):
-            self.parent().reload_hotkey(new_key)
+        other_key = "hotkey_select" if self.config_key == "hotkey_summon" else "hotkey_summon"
+        if new_key.upper() == str(config_manager.get(other_key, "")).upper():
+            self.error_label.setText("该按键已被另一个功能占用，请换一个")
+            return
+        parent = self.parent()
+        if parent:
+            if self.config_key == "hotkey_select" and hasattr(parent, "reload_select_hotkey"):
+                parent.reload_select_hotkey(new_key)
+            elif hasattr(parent, "reload_hotkey"):
+                parent.reload_hotkey(new_key)
         self.accept()
 
 
@@ -1181,6 +1195,60 @@ class GlassWindow(QWidget):
     def open_language_settings(self):
         dialog = LanguageDialog(self)
         dialog.exec()
+
+    def open_select_hotkey_settings(self):
+        dialog = HotkeyDialog(self, config_key="hotkey_select", title="✂️ 配置框选翻译快捷键")
+        dialog.exec()
+
+    # ---------------- 框选翻译：快捷键 → 全屏拖拽选区 → 取景框吸附并翻译 ----------------
+    def reload_select_hotkey(self, new_hotkey: str):
+        config_manager.set("hotkey_select", new_hotkey)
+        old = getattr(self, "select_hotkey_thread", None)
+        if old:
+            old.stop()
+        from global_hotkey import GlobalHotkeyThread, HOTKEY_ID_SELECT
+        self.select_hotkey_thread = GlobalHotkeyThread(hotkey_str=new_hotkey, hotkey_id=HOTKEY_ID_SELECT)
+        self.select_hotkey_thread.hotkey_triggered.connect(self.start_region_select)
+        self.select_hotkey_thread.start()
+        if hasattr(self, "tray_manager") and self.tray_manager:
+            self.tray_manager.sync_states()
+
+    @pyqtSlot()
+    def start_region_select(self):
+        if getattr(self, "_region_overlay", None) is not None:
+            return  # 已在框选中
+        from region_select import RegionSelectOverlay
+        self._was_visible_before_select = self.isVisible()
+        # 框选期间暂停识别并隐藏取景框，避免把蒙层本身截进 OCR
+        if hasattr(self, "worker"):
+            self.worker.set_moving(True)
+        self._clear_stale_content()
+        self.hide()
+        overlay = RegionSelectOverlay()
+        overlay.region_selected.connect(self._on_region_selected)
+        overlay.cancelled.connect(self._on_region_cancelled)
+        self._region_overlay = overlay
+        overlay.start()
+
+    def _on_region_selected(self, rect: QRect):
+        self._region_overlay = None
+        self.setGeometry(rect)
+        self.show()
+        self.raise_()
+        self._save_geometry()
+        if hasattr(self, "worker"):
+            # 强制识别一次 (即使"实时自动翻译"处于暂停状态)
+            self.worker.trigger_once((rect.x(), rect.y(), rect.width(), rect.height()))
+        if hasattr(self, "tray_manager") and self.tray_manager:
+            self.tray_manager.sync_states()
+
+    def _on_region_cancelled(self):
+        self._region_overlay = None
+        if getattr(self, "_was_visible_before_select", False):
+            self.show()
+            self._on_drag_settled()
+        elif hasattr(self, "worker"):
+            self.worker.set_moving(False)
 
     def reload_hotkey(self, new_hotkey: str):
         config_manager.set("hotkey_summon", new_hotkey)

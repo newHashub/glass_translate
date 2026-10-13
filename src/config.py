@@ -33,6 +33,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "wheel_zoom_enabled": True, # 鼠标在框内直接使用滚轮缩放窗口大小
     "show_status_pill": False,  # 是否在窗口底部显示状态提示胶囊 (默认关闭保持极简干净)
     "hotkey_summon": "Alt+R",   # 全局呼出/收起快捷键
+    "hotkey_select": "Alt+S",   # 全局框选翻译快捷键 (按下后拖拽框选区域)
 }
 
 

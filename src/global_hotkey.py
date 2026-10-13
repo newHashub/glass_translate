@@ -6,7 +6,8 @@ from PyQt6.QtCore import QThread, pyqtSignal
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32
 
-HOTKEY_ID = 9527
+HOTKEY_ID = 9527          # 呼出/收起
+HOTKEY_ID_SELECT = 9528   # 框选翻译
 MOD_ALT = 0x0001
 MOD_CONTROL = 0x0002
 MOD_SHIFT = 0x0004
@@ -62,8 +63,9 @@ class GlobalHotkeyThread(QThread):
     hotkey_triggered = pyqtSignal()
     registration_result = pyqtSignal(bool, str)
 
-    def __init__(self, hotkey_or_char: str = "Alt+R", use_alt: bool = True, parent=None, hotkey_str: Optional[str] = None, key_char: Optional[str] = None):
+    def __init__(self, hotkey_or_char: str = "Alt+R", use_alt: bool = True, parent=None, hotkey_str: Optional[str] = None, key_char: Optional[str] = None, hotkey_id: int = HOTKEY_ID):
         super().__init__(parent)
+        self.hotkey_id = hotkey_id
         if hotkey_str is not None:
             self.hotkey_str = hotkey_str
         elif key_char is not None:
@@ -89,7 +91,7 @@ class GlobalHotkeyThread(QThread):
             self.registration_result.emit(False, msg)
             return
 
-        success = user32.RegisterHotKey(None, HOTKEY_ID, modifiers, vk)
+        success = user32.RegisterHotKey(None, self.hotkey_id, modifiers, vk)
         self._registered = bool(success)
         if not self._registered:
             err = kernel32.GetLastError()
@@ -107,14 +109,14 @@ class GlobalHotkeyThread(QThread):
             if ret <= 0:
                 break
 
-            if msg.message == WM_HOTKEY and msg.wParam == HOTKEY_ID:
+            if msg.message == WM_HOTKEY and msg.wParam == self.hotkey_id:
                 self.hotkey_triggered.emit()
 
             user32.TranslateMessage(ctypes.byref(msg))
             user32.DispatchMessageW(ctypes.byref(msg))
 
         if self._registered:
-            user32.UnregisterHotKey(None, HOTKEY_ID)
+            user32.UnregisterHotKey(None, self.hotkey_id)
             self._registered = False
             print(f"[GlobalHotkey] 已注销全局热键 [{self.hotkey_str}]")
 

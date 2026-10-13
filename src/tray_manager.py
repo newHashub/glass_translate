@@ -127,6 +127,11 @@ class TrayManager:
         action_refresh.triggered.connect(self.window.trigger_refresh)
         self.menu.addAction(action_refresh)
 
+        self.action_select = QAction(self._select_label(), self.menu)
+        if hasattr(self.window, "start_region_select"):
+            self.action_select.triggered.connect(self.window.start_region_select)
+        self.menu.addAction(self.action_select)
+
         self.menu.addSeparator()
 
         # 3. 语言选择子菜单
@@ -304,6 +309,11 @@ class TrayManager:
             act_custom_hk.triggered.connect(self.window.open_hotkey_settings)
         hotkey_menu.addAction(act_custom_hk)
 
+        act_select_hk = QAction("✂️ 框选翻译快捷键...", hotkey_menu)
+        if hasattr(self.window, "open_select_hotkey_settings"):
+            act_select_hk.triggered.connect(self.window.open_select_hotkey_settings)
+        hotkey_menu.addAction(act_select_hk)
+
         self.menu.addSeparator()
 
         # 8. 交互快捷开关
@@ -343,9 +353,15 @@ class TrayManager:
         action_quit.triggered.connect(self._quit_app)
         self.menu.addAction(action_quit)
 
+    @staticmethod
+    def _select_label() -> str:
+        hk = config_manager.get("hotkey_select", "Alt+S").replace("+", " + ")
+        return f"✂️ 框选区域翻译 ({hk})"
+
     def sync_states(self):
         """同步菜单所有单选与多选选中状态"""
         self.action_toggle.setChecked(self.window.isVisible())
+        self.action_select.setText(self._select_label())
         self.action_auto.setChecked(config_manager.get("auto_translate", True))
         self.action_wheel_zoom.setChecked(config_manager.get("wheel_zoom_enabled", True))
         self.action_status_pill.setChecked(config_manager.get("show_status_pill", False))

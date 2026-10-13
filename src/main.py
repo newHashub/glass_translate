@@ -67,9 +67,14 @@ def main():
     hotkey_thread.start()
     window.hotkey_thread = hotkey_thread
 
+    # 4. 启动框选翻译热键 (默认 Alt+S：按下后拖拽框选区域即翻译)
+    window.reload_select_hotkey(config_manager.get("hotkey_select", "Alt+S"))
+
     def on_about_to_quit():
         if hasattr(window, "hotkey_thread") and window.hotkey_thread:
             window.hotkey_thread.stop()
+        if getattr(window, "select_hotkey_thread", None):
+            window.select_hotkey_thread.stop()
         if hasattr(window, "worker") and window.worker:
             window.worker.stop()
 
