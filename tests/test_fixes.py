@@ -156,11 +156,15 @@ def ocr(monkeypatch):
 IMG = Image.new("RGB", (300, 100), (255, 255, 255))
 
 
-def test_auto_english_uses_single_pass(ocr, monkeypatch):
-    called = _fake_ocr(ocr, monkeypatch, {"en-US": ["The quick brown fox jumps over the lazy dog."]})
+def test_auto_english_picks_english_recognizer(ocr, monkeypatch):
+    # 其他识别器读纯英文同样能读出英文，但没有本语种字符，得 0 分
+    _fake_ocr(ocr, monkeypatch, {
+        "en-US": ["The quick brown fox jumps over the lazy dog."],
+        "ko-KR": ["The quick brown fox jumps over the lazy dog."],
+    })
     text, blocks = ocr.recognize(IMG, "auto")
     assert "quick brown fox" in text
-    assert called == ["en-US"], "英文画面不应额外尝试其他识别器"
+    assert ocr._auto_sticky_tag == "en-US"
 
 
 def test_auto_detects_japanese(ocr, monkeypatch):
@@ -182,6 +186,23 @@ def test_auto_detects_korean(ocr, monkeypatch):
     _fake_ocr(ocr, monkeypatch, {"en-US": ["O1 0"], "ko-KR": ["용사여, 이 문 너머에는"]})
     text, _ = ocr.recognize(IMG, "auto")
     assert text.startswith("용사여")
+
+
+def test_auto_detects_korean_mixed_with_english(ocr, monkeypatch):
+    # 英文模型读韩英混排：英文部分正常，韩文部分变成少量乱码，整体得分仍不低
+    called = _fake_ocr(ocr, monkeypatch, {
+        "en-US": ["Press START to continue 0l 2 Ol", "Settings OI"],
+        "ko-KR": ["Press START to continue 계속하려면", "Settings 설정"],
+    })
+    text, _ = ocr.recognize(IMG, "auto")
+    assert "계속하려면" in text and "설정" in text
+    assert ocr._auto_sticky_tag == "ko-KR"
+    assert "ko-KR" in called
+
+
+def test_cjk_recognizer_scores_zero_on_pure_english(ocr):
+    assert ocr.script_score("Press START to continue", "ko-KR") == 0.0
+    assert ocr.script_score("Press START to continue", "ja-JP") == 0.0
 
 
 def test_auto_prefers_chinese_over_japanese_without_kana(ocr, monkeypatch):

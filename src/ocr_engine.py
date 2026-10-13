@@ -148,32 +148,43 @@ class OcrEngine:
     _RE_LATIN_WORD = re.compile(r"[A-Za-z]+")
 
     @classmethod
-    def script_score(cls, text: str, lang_tag: str) -> float:
-        """评估识别结果与识别器语种的吻合度 (0~1)。
-        Windows OCR 是单语识别器：用英文模型读日文时会输出零碎的乱码字母，
-        用日文模型读日文时则会输出大量假名/汉字，据此判断哪个识别器"读懂了"。"""
-        chars = [c for c in text if not c.isspace()]
-        if not chars:
-            return 0.0
-        n = float(len(chars))
-        tag = lang_tag.lower()
-        if tag.startswith("ja"):
-            kana = len(cls._RE_KANA.findall(text))
-            han = len(cls._RE_CJK.findall(text))
-            # 没有假名时更可能是中文：压低到采纳阈值以下，让中文识别器参与比较
-            return (kana + han) / n * (1.0 if kana > 0 else 0.5)
-        if tag.startswith("zh"):
-            return len(cls._RE_CJK.findall(text)) / n
-        if tag.startswith("ko"):
-            return len(cls._RE_HANGUL.findall(text)) / n
-        # 拉丁语系：统计"像真实单词"的字母比例 (长度>=2 且含元音)
+    def _latin_good_letters(cls, text: str) -> int:
+        """统计"像真实单词"的拉丁字母数 (长度>=2 且含元音，或单字母 a/i)"""
         good = 0
         for w in cls._RE_LATIN_WORD.findall(text):
             if len(w) >= 2 and re.search(r"[aeiouyAEIOUY]", w):
                 good += len(w)
             elif w.lower() in ("a", "i"):
                 good += 1
-        return good / n
+        return good
+
+    @classmethod
+    def script_score(cls, text: str, lang_tag: str) -> float:
+        """评估识别结果与识别器语种的吻合度 (0~1)。
+        Windows OCR 是单语识别器：用英文模型读日文时会输出零碎的乱码字母，
+        用日文模型读日文时则会输出大量假名/汉字，据此判断哪个识别器"读懂了"。
+        分母只计字母类字符 (数字、标点不参与)。日/中/韩识别器同时能读出夹杂的英文，
+        因此其得分 = (本语种文字 + 正常英文单词) / 字母总数，但必须至少含一个本语种字符。"""
+        letters = [c for c in text if c.isalpha()]
+        if not letters:
+            return 0.0
+        n = float(len(letters))
+        tag = lang_tag.lower()
+        latin = cls._latin_good_letters(text)
+        if tag.startswith("ja"):
+            kana = len(cls._RE_KANA.findall(text))
+            han = len(cls._RE_CJK.findall(text))
+            if kana + han == 0:
+                return 0.0
+            # 没有假名时更可能是中文：压低到采纳阈值以下，让中文识别器参与比较
+            return min(1.0, (kana + han + latin) / n) * (1.0 if kana > 0 else 0.5)
+        if tag.startswith("zh"):
+            han = len(cls._RE_CJK.findall(text))
+            return min(1.0, (han + latin) / n) if han else 0.0
+        if tag.startswith("ko"):
+            hangul = len(cls._RE_HANGUL.findall(text))
+            return min(1.0, (hangul + latin) / n) if hangul else 0.0
+        return latin / n
 
     def _auto_candidates(self) -> List[str]:
         """自动模式下按优先级排列的候选识别器：上次成功 > 英文 > 日文 > 简体中文 > 韩文"""
@@ -212,9 +223,16 @@ class OcrEngine:
 
     AUTO_ACCEPT_SCORE = 0.6
 
+    @staticmethod
+    def _is_cjk_tag(tag: str) -> bool:
+        return tag.lower().startswith(("ja", "zh", "ko"))
+
     def _recognize_auto(self, img: Image.Image):
-        """自动模式：先试最可能的识别器，结果可信则直接采用；
-        否则依次尝试其他已安装的识别器，取吻合度最高者，并记住它供下一帧优先使用。"""
+        """自动模式：先试最可能的识别器，日/中/韩识别器结果可信则直接采用；
+        否则依次尝试其他已安装的识别器，取吻合度最高者，并记住它供下一帧优先使用。
+        英文识别器读韩英/日英混排时只把非拉丁部分读成少量乱码 (如 "Ol")，得分依旧很高，
+        无法判断画面里有没有别的文字，所以英文结果不提前采用，总要和其他识别器比一次。
+        日/中/韩识别器同样能读出夹杂的英文，混排时它们得分更高；纯英文时它们得 0 分。"""
         best = None  # (score, tag, res)
         for tag in self._auto_candidates():
             try:
@@ -228,7 +246,7 @@ class OcrEngine:
             score = self.script_score(text, tag)
             if best is None or score > best[0]:
                 best = (score, tag, res)
-            if score >= self.AUTO_ACCEPT_SCORE:
+            if self._is_cjk_tag(tag) and score >= self.AUTO_ACCEPT_SCORE:
                 break
         if best is None:
             return None, self._auto_candidates()[0]
