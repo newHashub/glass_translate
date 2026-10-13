@@ -1,268 +1,152 @@
-# 🪟 GlassTranslate (透视翻译器)
+# 🪟 GlassTranslate
 
 <div align="center">
 
-**[简体中文](README.md)** • **[English](docs/README_EN.md)** • **[日本語](docs/README_JA.md)** • **[한국어](docs/README_KO.md)**
-
-<br/>
+**简体中文** • [English](docs/README_EN.md) • [日本語](docs/README_JA.md) • [한국어](docs/README_KO.md)
 
 ![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D4?logo=windows)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
-![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen)
-![Startup](https://img.shields.io/badge/Startup-~0.6s%20(秒开)-blue)
-![Latency](https://img.shields.io/badge/Latency-~60ms-orange)
 
-**专为 Windows 打造的无边框透明玻璃实时透视翻译器**  
-*摆脱繁琐的“截图 - 划词 - 弹窗查看”，把取景框覆盖在文字上方，原文原地秒变中文！*
-
-[✨ 核心特性](#-核心特性) • [🚀 快速开始](#-快速开始) • [🎮 交互与快捷键](#-交互与快捷键) • [⚙️ 右键控制中心](#️-右键控制中心概览) • [🏗️ 架构设计](#️-架构设计) • [❓ 常见问题](#-常见问题)
-
-<br/>
+**一块透明的翻译玻璃：放在外文上，译文直接显示在原文的位置。**
 
 <a href="docs/assets/GlassTranslate-Promo.mp4">
-  <img src="docs/assets/preview.gif" alt="GlassTranslate demo" width="860" />
+  <img src="docs/assets/preview.gif" alt="GlassTranslate 演示" width="860" />
 </a>
 
-**[▶️ 观看完整宣传视频 (46 秒)](docs/assets/GlassTranslate-Promo.mp4)**
+[▶️ 观看完整演示视频（46 秒）](docs/assets/GlassTranslate-Promo.mp4)
 
 </div>
 
----
+GlassTranslate 是一个 Windows 屏幕实时翻译工具。它是一个没有边框的透明取景框，拖到哪里，框里的外文就被译文覆盖在哪里，原本的画面不会被弹窗挡住。适合看外文网页和文档、玩没有汉化的游戏、看生肉视频。
 
-## 🌟 为什么选择 GlassTranslate？
+## 功能
 
-在阅读外语文献、浏览海外技术文档、玩未汉化游戏、查阅英文代码或看外语生肉视频时，传统的划词插件或截图翻译软件往往需要繁琐的多步操作，且会弹出突兀的卡片窗口打断视线。
+- **原地翻译**：识别每一行文字的位置，取周围的底色，把译文画在原文上方。
+- **随手拖动**：在框内按住左键拖动，四边可以缩放，滚轮以鼠标为中心缩放。松手后自动重新识别。
+- **框选翻译**：按 `Alt + S`，像截图一样拖出一块区域，取景框直接贴上去翻译。
+- **自动识别语言**：在已安装的英、日、中、韩 OCR 中自动选择，韩文、日文夹杂英文也能识别。
+- **免 Key 即用**：默认使用有道网页通道；也可以接入 DeepSeek、OpenAI 或本地 Ollama。
+- **识别快、启动快**：使用 Windows 自带 OCR，本地识别；挪开再放回同样的文字，直接用缓存，不再请求网络。
 
-**GlassTranslate** 提供了一种极其优雅的“透视感”体验：
-- 就像在桌面上**放置了一块完全透明的取景玻璃**；
-- 框内的外文字符会被**原地精准替换为优美排版的中文**；
-- 底层背景、视频画面、软件界面完全保持原样，视野零遮挡；
-- 窗口移动时如纯净玻璃般瞬间清空，落位后**0 毫秒吸附命中缓存**，瞬间呈现翻译！
+## 下载与使用
 
----
+1. 在 [Releases](https://github.com/newHashub/glass_translate/releases) 下载 `GlassTranslate-v1.0.0-Windows-x64.zip`，解压到任意位置。
+2. 双击 `GlassTranslate.exe` 启动（也可以运行 `一键生成桌面快捷方式.vbs` 在桌面放个图标）。
+3. 把取景框拖到外文上即可。按 `Alt + R` 可以随时在鼠标处呼出或隐藏。
 
-## ✨ 核心特性
+不需要安装 Python。如果要识别日文或韩文，需要先安装对应的 OCR 语言包，见[常见问题](#常见问题)。
 
-### 1. 🪟 极致纯净的透明取景体验
-- **无标题栏、无常驻外边框**：全窗口 100% 透明，仅保留四角青蓝极简对焦标。
-- **原地文字智能替换 (In-Place Translation)**：提取框内文字的真实屏幕物理坐标，自动采样文字周边底色与明度，以两遍绘制（Two-Pass）架构优雅覆盖微胶囊背景并渲染中文。
-- **像移动一块纯净玻璃**：鼠标左键在框内任意位置按下即可平滑拖拽，**移动瞬间清屏为透明，松手落位瞬间智能吸附**，完全符合物理直觉。
+## 快捷键与操作
 
-### 2. ⚡ 0.6 秒极速秒开与零黑框体验
-- **免临时解压即开即用**：告别传统 Python 打包单文件在每次启动时耗费 3~5 秒解压几十兆动态库至 `Temp` 的卡顿，原生秒开仅需 **~0.6s**。
-- **纯原生 GUI**：完全隐藏 CMD 控制台窗口，启动绝不闪烁任何控制台黑框。
-- **组件惰性加载与后台预热**：界面核心优先在 100ms 内瞬间呈现，重型引擎在后台 QThread 并行预热，界面丝滑无等待。
+| 操作 | 作用 |
+| :--- | :--- |
+| `Alt + R` | 在鼠标处呼出 / 隐藏取景框 |
+| `Alt + S` | 框选翻译：拖出一块区域即翻译，`Esc` 或右键取消 |
+| 框内按住左键拖动 | 移动取景框 |
+| 拖动四边或四角 | 调整大小 |
+| 框内滚动滚轮 | 以鼠标为中心缩放（可在菜单中关闭） |
+| 框内右键 / 托盘图标右键 | 打开设置菜单 |
+| 单击托盘图标 | 显示 / 隐藏取景框 |
 
-### 3. ⌨️ 全局唤出快捷键自由配置
-- **多预设快速切换**：支持 `Alt+R`（默认）、`Alt+Q`、`Alt+W`、`Alt+D`、`Alt+Space`、`Ctrl+Shift+R`、`F4` 等主流常用热键。
-- **按键动态录制弹窗**：支持在自定义按键弹窗中直接敲击任意组合键自动录入。
-- **免重启热生效**：切换快捷键后，底层 Win32 全局热键监听线程无缝热重载，即刻生效。
+两个快捷键都可以在右键菜单 **⌨️ 唤出快捷键** 中修改，改完立即生效。
 
-### 4. 📑 长篇段落自适应分块与行对齐修复 (Chunking & Repair)
-- **严格安全分块阈值**：将长篇文本严格切分为 360 字符以内的自适应微块，彻底杜绝接口隐式截断丢弃最后几段文字的问题。
-- **行级行数比对与对齐修补**：当长文本分块返回行数发生微小偏差时，系统自动复用已对齐的行，并针对缺失行发起精准补译，保证多段落文献 **100% 完整无缺漏翻译**。
+## 设置菜单
 
-### 5. 🧠 行级/句子级智能语义持久缓存
-- **微调移动 0ms 瞬间秒显**：不仅支持整段 MD5 缓存，更细化到每一行、每一句的独立语义指纹；
-- **重音与变音符号模糊容错**：引入 `unicodedata` 变音折叠技术（如 `à->a`, `é->e`），即使轻微拖动取景框导致切边或标点微扰，**100% 命中缓存，零网络请求秒级贴合**！
+在框内或托盘图标上点右键，可以设置：
 
-### 6. ⚡ 毫秒级识别与多通道翻译
-- **Windows 原生硬件加速 OCR**：基于 Windows 10/11 WinRT 硬件 OCR 引擎，本地识别仅需 **10~20ms**，零 CPU 占用。
-- **有道移动端网页通道 (默认，免 Key)**：单次请求通常 **50~90ms**，比 aidemo 演示接口更不容易触发 `411 访问受限`。
-- **多级自动降级**：移动端主通道 ➔ aidemo 备用（触发限流后自动冷却 30 秒）➔ MyMemory 兜底，单一通道异常时尽量不中断翻译。
+- **翻译语言**：12 组常用预设（自动/英/日/韩/法/德/俄/西 → 中文，中文 → 英/日/韩，自动 → 英文），或在「自定义自由选择」里任意搭配。
+- **翻译引擎**：有道网页通道（默认）、MyMemory、自定义大模型（OpenAI 兼容接口）。
+- **显示模式**：原地替换（默认）或悬浮字幕卡片。
+- **译文字号、识别频率、窗口置顶、底部状态提示、滚轮缩放**。
+- **复制最新译文**、**自定义 API 配置**。
 
-> ⚠️ **关于默认翻译通道**：默认的有道通道调用的是有道网页端接口，**并非官方开放 API**，免 Key 即用，但高频使用或访问量大时可能被限流、甚至随网页改版失效。日常轻量使用一般没有问题；如果追求长期稳定，建议在右键菜单 **🔑 自定义 API 配置...** 中接入 DeepSeek、OpenAI 等大模型，或本地 Ollama（完全离线、数据不出本机）。
+## 常见问题
 
-### 7. 🖱️ 8 向边缘自适应缩放与框内滚轮缩放
-- **边缘感应 8 向平滑缩放**：鼠标划过边缘 14px 范围自动变为缩放手势，纯 Qt 状态机调度，杜绝 Win32 模态消息死锁。
-- **框内鼠标锚点滚轮缩放**：鼠标在框内直接滚动滚轮，以鼠标所在光标为中心等比快速缩放取景范围。
+<details>
+<summary><b>选了"自动"，为什么只识别出英文？</b></summary>
 
-### 8. 🌐 支持自定义大模型 (OpenAI / DeepSeek 等)
-- 内置偏好设置面板，不仅支持内置高速引擎，还可自由接入自定义 API（如 OpenAI `gpt-4o-mini`、`deepseek-chat` 或本地 Ollama）。
-- 配置窗口自适应舒适排版，模型输入与操作按钮完整舒展，支持鼠标无边框拖拽移动。
+Windows 只带有你所安装语言的 OCR。没有装日语或韩语，就识别不了这两种文字。
 
-> 📦 **普通用户开箱即用**：无需安装 Python 或配置任何环境，直接前往 [👉 GitHub Releases 发行页](https://github.com/newHashub/glass_translate/releases) 下载 `GlassTranslate-v1.0.0-Windows-x64.zip` 解压即用！
+安装方法：**设置 → 时间和语言 → 语言和区域 → 添加语言**，选日语或韩语，确保勾选"光学字符识别"。不需要切换系统显示语言，装好后重启 GlassTranslate。
+</details>
 
-> 🔍 **与同类工具的差异**：爱译客、WinLens、团子翻译器、LunaTranslator 等工具各有所长，GlassTranslate 主打「开源、轻量、免 Key、随手拖」。详见 [👉 同类工具对比](docs/COMPARISON.md)。
+<details>
+<summary><b>需要 API Key 吗？默认通道稳定吗？</b></summary>
 
----
+不需要 Key。但默认的有道通道调用的是有道网页端接口，**不是官方开放 API**：高频使用可能被限流，网页改版后也可能失效。程序会在失败时依次换用有道的另一个接口和 MyMemory。
 
-## 🚀 快速开始
+需要长期稳定时，建议在右键菜单 **🔑 自定义 API 配置...** 里接入大模型，例如：
 
-根据您的使用需求，选择对应方式：
+- DeepSeek：`https://api.deepseek.com/v1/chat/completions`
+- 本地 Ollama（完全离线）：`http://localhost:11434/v1/chat/completions`
+</details>
 
-### 方案一：普通用户免配环境版（推荐，免装 Python，解压即用）
+<details>
+<summary><b>取景框会把自己也截进去吗？</b></summary>
 
-适合不熟悉编程、希望直接使用的用户：
-1. 前往 [👉 Releases 发行版页面](https://github.com/newHashub/glass_translate/releases)；
-2. 下载预编译打包好的分发包 **`GlassTranslate-v1.0.0-Windows-x64.zip`**；
-3. 解压到您电脑的任意位置（如 `D:\GlassTranslate`）；
-4. 双击解压目录中的 **`一键生成桌面快捷方式.vbs`**（将在桌面生成专属的启动图标），或直接双击 **`GlassTranslate.exe`** 即可瞬间启动！
+不会。窗口设置了 `WDA_EXCLUDEFROMCAPTURE`，截屏时它对自己不可见，所以不会出现"画中画"或闪烁。
+</details>
 
----
+<details>
+<summary><b>长段落会漏翻吗？</b></summary>
 
-### 方案二：开发者源码运行与开发
+长文本会切成小块分别翻译，再按行数校对；如果某几行没对上，会单独补翻这几行。
+</details>
 
-适合熟悉 Python、希望阅读源码或进行二次开发的用户：
+<details>
+<summary><b>Alt + R 没反应？</b></summary>
 
-#### 1. 环境依赖
-- **操作系统**：Windows 10 / Windows 11 (64位)
-- **Python 版本**：Python 3.10+ (推荐 Python 3.12)
+快捷键可能被其他软件占用了。在托盘图标右键菜单 **⌨️ 唤出快捷键** 里换一个组合。另外检查托盘里是否同时开了多个 GlassTranslate。
+</details>
 
-#### 2. 克隆代码与依赖安装
+## 开发
+
+需要 Windows 10/11 和 Python 3.10 以上（推荐 3.12）。
+
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
 pip install -r requirements.txt
+python main.py        # 或双击 run.bat
+pytest                # 运行测试（离线）
 ```
 
-#### 3. 启动程序
-- **便捷方式**：直接双击运行根目录下的 **`run.bat`**（自动检测环境、静默后台启动、无黑框）；
-- **命令行方式**：
-  ```powershell
-  python main.py
-  ```
+双击 `build_exe.bat` 打包：生成 `dist\GlassTranslate\`、桌面快捷方式和发布用的 ZIP。
 
----
+<details>
+<summary><b>工作原理与目录结构</b></summary>
 
-### 📦 开发者本地打包独立应用 (EXE)
-如果您修改了源代码，希望在本地将其编译为独立的免环境 EXE 应用：
-- 双击运行根目录下的 **`build_exe.bat`**；
-- 脚本将自动：
-  1. 编译生成独立应用到 `dist\GlassTranslate\`；
-  2. 在您本机的桌面创建/更新 **`GlassTranslate.lnk`** 快捷方式；
-  3. 自动生成可直接分享给好友的免配置压缩包 `dist\GlassTranslate-v1.0.0-Windows-x64.zip`。
+后台线程循环执行：截取取景框下的画面 → 和上一帧比较，没变化就跳过 → Windows OCR 识别出每一行的文字和位置 → 先查行级缓存，没有再请求翻译 → 把译文画回对应位置。
 
----
-
-## 🎮 交互与快捷键
-
-| 操作 / 快捷键 | 功能说明 |
-| :--- | :--- |
-| **Alt + R (或自定义快捷键)** | **全局快速呼出/隐藏**：在当前鼠标所在位置秒显/收起翻译框 |
-| **Alt + S (或自定义快捷键)** | **框选翻译**：屏幕变暗后按住左键拖出一个矩形，松手后取景框自动贴合该区域并立即翻译；Esc 或右键取消 |
-| **框内按住左键拖拽** | 平滑移动取景框；按下瞬间清屏，松手瞬间吸附秒显译文 |
-| **四周边缘按住拖拽** | 8 个方向自由调整取景框宽度与高度 |
-| **鼠标在框内滑动滚轮** | 以鼠标为中心快速放大/缩小取景窗口（可在菜单中开启/关闭） |
-| **在框内点击鼠标右键** | 唤出全能控制菜单（语言选择、快捷键配置、模式切换、API 配置等） |
-| **双击系统托盘图标** | 快速显示 / 隐藏翻译框 |
-
----
-
-## ⚙️ 右键控制中心概览
-
-鼠标在框内右键或在任务栏右下角托盘图标右键均可唤出（**所有配置一键直达，零冗余弹窗**）：
-
-- 🪟 **显示/隐藏翻译框**
-- ⏸️ **实时自动翻译** (开启/暂停实时检测)
-- ⚡ **立即识别刷新** (手动强制触发扫描)
-- ✂️ **框选区域翻译** (与 `Alt + S` 相同，拖拽框选任意区域)
-- 🌐 **翻译语言 ➔** (包含英中、日中、韩中、法中、德中、俄中、西中、中英、中日、中韩等 **12 组快捷预设**，或点击 **“⚙️ 自定义自由选择...”** 呼出多语种任意互译面板)
-- 🚀 **翻译引擎 ➔** (⚡ 有道网页通道 [默认]、🌐 MyMemory 免费通道、🤖 自定义大模型)
-- 🔤 **显示模式 ➔** (原地文字替换 [默认] / 悬浮卡片字幕)
-- 🔍 **译文字号 ➔** (紧凑 85%、标准 100% [默认]、稍大 115%、醒目 130%)
-- ⏱️ **识别频率 ➔** (极速 200ms、均衡 300ms [默认]、节能 600ms、慢速 1000ms)
-- ⌨️ **唤出快捷键 ➔** (快速切换预设或自定义快捷键录制)
-- 🖱️ **框内滚轮缩放窗口** (勾选开关)
-- 💡 **显示底部状态提示** (勾选开关，默认关闭保持极致通透)
-- 📌 **窗口始终置顶** (勾选开关)
-- 📋 **复制最新译文**
-- 🔑 **自定义 API 配置...** (专为 OpenAI / DeepSeek / Ollama 用户准备的轻量端点与 Key 设置)
-- ❌ **退出程序**
-
----
-
-## 🏗️ 架构设计
-
-本项目采用高响应、完全解耦的多线程异步流水线架构：
-
-```mermaid
-flowchart TD
-    subgraph UI ["🎨 前台界面层 (GUI Thread)"]
-        GW["GlassWindow (完全透明 / 纯 Qt 8向缩放 / 无锁拖拽)"]
-        TP["Two-Pass 渲染引擎 (底色微胶囊 + 像素级字号匹配)"]
-        TM["TrayManager (托盘管理与全功能右键菜单)"]
-    end
-
-    subgraph Pipeline ["⚡ 后台工作流流水线 (TranslationWorker)"]
-        CE["CaptureEngine (屏幕截取 + 80x80 快速差分比对)"]
-        OCR["OcrEngine (WinRT 原生硬件加速 OCR: 10~20ms)"]
-        TE["TranslatorEngine (行级语义持久缓存 + 自适应分块补漏)"]
-    end
-
-    subgraph Hardware ["🖥️ Windows 底层支持"]
-        WDA["WDA_EXCLUDEFROMCAPTURE (防自截屏递归穿透)"]
-        DWM["DWM 原生窗口圆角与无边框拖拽"]
-        HK["Win32 RegisterHotKey 全局原生消息泵"]
-    end
-
-    GW -->|坐标与静止触发| Pipeline
-    CE --> OCR --> TE
-    TE -->|result_ready 信号| GW
-    GW --> TP
-    Hardware -.-> GW
-```
-
-### 目录结构说明
 ```
 glass_translate/
-├── main.py                  # 打包与源码运行的入口，转到 src/main.py
+├── main.py                  # 入口，转到 src/main.py
 ├── src/
-│   ├── main.py              # 启动流程 (控制台隐藏、托盘、全局热键、生命周期)
-│   ├── glass_window.py      # 透明取景窗、自适应排版、事件状态机与设置弹窗
-│   ├── region_select.py     # Alt+S 框选翻译的全屏选区遮罩 (支持多显示器)
-│   ├── worker.py            # 后台工作线程 (变动检测、缓存秒显、并行预热)
-│   ├── capture_engine.py    # 屏幕捕获与像素变动差分检测
-│   ├── ocr_engine.py        # Windows 原生 OCR 封装与"自动"语种识别
-│   ├── translator_engine.py # 多通道翻译调度 (分块补漏、行级缓存)
-│   ├── global_hotkey.py     # Win32 RegisterHotKey 全局热键线程
-│   ├── tray_manager.py      # 托盘图标与右键控制菜单
-│   ├── win32_utils.py       # 防自截屏、DWM 圆角与高 DPI 感知
-│   └── config.py            # 本地配置管理
-├── resources/app_icon.ico   # 应用图标
-├── scripts/                 # 快捷方式生成、发布打包、静默启动脚本
-├── docs/                    # 多语言 README、同类工具对比、演示素材
-├── tests/                   # pytest 测试 (离线运行)
-├── run.bat                  # 一键启动 (优先使用已打包的 exe)
-├── build_exe.bat            # 一键打包 exe、快捷方式与发布 ZIP
-└── requirements.txt         # Python 依赖
+│   ├── main.py              # 启动流程：托盘、全局快捷键、退出清理
+│   ├── glass_window.py      # 透明取景框、译文排版、设置对话框
+│   ├── region_select.py     # Alt+S 框选遮罩（支持多显示器）
+│   ├── worker.py            # 后台工作线程
+│   ├── capture_engine.py    # 截屏与画面变化检测
+│   ├── ocr_engine.py        # Windows OCR 封装、自动识别语言
+│   ├── translator_engine.py # 翻译通道调度、分块、缓存
+│   ├── global_hotkey.py     # 全局快捷键（RegisterHotKey）
+│   ├── tray_manager.py      # 托盘图标与右键菜单
+│   ├── win32_utils.py       # 防自截屏、窗口样式、高 DPI
+│   └── config.py            # 配置读写
+├── resources/               # 图标
+├── scripts/                 # 快捷方式、发布打包脚本
+├── docs/                    # 其他语言 README、同类工具对比、演示素材
+├── tests/                   # pytest 测试
+├── run.bat                  # 启动脚本（优先使用已打包的 exe）
+└── build_exe.bat            # 打包脚本
 ```
-
----
-
-## ❓ 常见问题 (FAQ)
-
-<details>
-<summary><b>Q1: 为什么移动翻译框时底层画面不会被翻译框本身遮挡？</b></summary>
-本项目通过调用 Windows 底层 API <code>SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE)</code>，使翻译窗口在 Windows 的屏幕抓取流（BitBlt / DirectX / DWM）中被底层自动隐形穿透，彻底杜绝了“自截屏递归产生无限画中画”的问题。
 </details>
 
-<details>
-<summary><b>Q2: 为什么我的文字排版不会遮挡上一行或字体过大？</b></summary>
-内置自适应排版引擎会根据 OCR 提取的每行实际高度（<code>wh</code>）以及真实行间距（<code>pitch</code>），智能约束背景微胶囊的高度与行距，并采用“先画所有胶囊背景，再画所有文字”的两遍绘制（Two-Pass）技术，无论字体如何缩放均不会产生覆盖截断。
-</details>
+## 同类工具
 
-<details>
-<summary><b>Q3: 长篇英文文章最后几段会不会漏掉？</b></summary>
-不会。本项目具备段落自适应分块与行对齐修补技术。即使一次性框选数百词的大段落文本，引擎会自动按 360 字符以内的微块进行安全分发，并自动校验比对行数对齐缺失行，确保 100% 完整保留所有译文段落。
-</details>
+爱译客、WinLens、团子翻译器、LunaTranslator 等工具各有所长。GlassTranslate 的定位是开源、轻量、免 Key、随手拖动。详细对比见 [同类工具对比](docs/COMPARISON.md)。
 
-<details>
-<summary><b>Q4: 是否需要付费申请 API Key？</b></summary>
-不需要。默认的有道通道无需任何 API Key，开箱即用。但它使用的是有道网页端接口而非官方开放 API，高频使用时可能被限流或失效；如需长期稳定，建议在右键菜单 **🔑 自定义 API 配置...** 中填入自己的大模型 Key（DeepSeek 价格很低），或接入本地 Ollama 完全离线使用。
-</details>
+## 许可证
 
-<details>
-<summary><b>Q5: 选了"自动"，为什么只识别出英文（日文、韩文没识别）？</b></summary>
-"自动"模式会在系统已安装的英、日、中、韩 OCR 识别器中挑选读得最好的一个，混排文字（如韩文夹英文）也能识别。但 Windows 只带有你所装语言的 OCR 识别器：如果没有安装日语或韩语，这两种文字就无法识别。安装方法：<b>设置 → 时间和语言 → 语言和区域 → 添加语言</b>，选择日语或韩语，勾选"光学字符识别"即可，无需切换系统显示语言。
-</details>
-
----
-
-## 📄 开源许可证
-
-本项目采用 [MIT License](LICENSE) 开源协议。欢迎提交 Issue 和 Pull Request！
-
-如果你觉得这个项目对你有帮助，欢迎在 GitHub 上点一个 ⭐️ **Star** 支持一下！  
-GitHub 仓库地址：[https://github.com/newHashub/glass_translate](https://github.com/newHashub/glass_translate)
+[MIT](LICENSE)。欢迎提 Issue 和 Pull Request。觉得有用的话，点个 ⭐ 支持一下。
