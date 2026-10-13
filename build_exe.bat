@@ -26,6 +26,8 @@ echo [2/5] Closing running GlassTranslate...
 taskkill /f /im GlassTranslate.exe >nul 2>nul
 
 echo [3/5] Running PyInstaller...
+if exist dist rmdir /s /q dist
+if exist dist goto fail
 "%PY%" -m PyInstaller --noconfirm --clean --distpath dist --workpath build packaging\GlassTranslate.spec
 if errorlevel 1 goto fail
 
