@@ -33,9 +33,21 @@ GlassTranslate は Windows 向けのリアルタイム画面翻訳ツールで�
 
 ## ダウンロードと使い方
 
-1. [Releases](https://github.com/newHashub/glass_translate/releases) から `GlassTranslate-v1.0.0-Windows-x64.zip` をダウンロードし、任意の場所に展開します。
-2. `GlassTranslate.exe` をダブルクリックして起動します（`一键生成桌面快捷方式.vbs` を実行するとデスクトップにショートカットを作れます）。
+1. [Releases](https://github.com/newHashub/glass_translate/releases) を開き、最新の `GlassTranslate-vX.Y.Z-Windows-x64.zip` をダウンロードします（リリース下部の Assets にあります）。
+2. 任意の場所に展開し、中の `GlassTranslate` フォルダを開いて `GlassTranslate.exe` をダブルクリックします。
 3. ファインダーを外国語の上にドラッグします。`Alt + R` でいつでもマウス位置に表示／非表示できます。
+
+展開したフォルダの中身：
+
+```
+GlassTranslate/
+├── GlassTranslate.exe      ← ダブルクリックで起動
+├── 创建桌面快捷方式.vbs     ← 「デスクトップにショートカットを作成」：ダブルクリックでアイコンを作成
+├── 使用说明.txt             ← 使い方（中国語）
+└── _internal/              ← 実行に必要なファイル。exe と同じ場所に置いてください
+```
+
+> リポジトリページのソースコード（Code → Download ZIP）は開発者向けで、そのままでは動きません。Releases の ZIP をダウンロードしてください。
 
 Python は不要です。日本語や韓国語を認識するには対応する OCR 言語パックが必要です。[よくある質問](#よくある質問)をご覧ください。
 
@@ -111,12 +123,12 @@ Windows 10/11 と Python 3.10 以上（3.12 推奨）が必要です。
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-pip install -r requirements.txt
-python main.py        # または run.bat をダブルクリック
+pip install -r requirements-dev.txt
+python main.py        # 実行
 pytest                # テストを実行（オフライン）
 ```
 
-`build_exe.bat` をダブルクリックすると、`dist\GlassTranslate\`、デスクトップのショートカット、配布用 ZIP が作られます。
+**ビルド**：`build_exe.bat` をダブルクリックします。`.venv-build` にクリーンな仮想環境を作り、`dist\GlassTranslate\`、デスクトップのショートカット、`dist\GlassTranslate-v<バージョン>-Windows-x64.zip` を生成します。バージョンは `src/version.py` で変更します。
 
 <details>
 <summary><b>仕組みとディレクトリ構成</b></summary>
@@ -125,8 +137,8 @@ pytest                # テストを実行（オフライン）
 
 ```
 glass_translate/
-├── main.py                  # エントリーポイント（src/main.py を呼び出す）
-├── src/
+├── main.py                  # エントリーポイント
+├── src/                     # ソースコード
 │   ├── main.py              # 起動処理：トレイ、グローバルショートカット、終了処理
 │   ├── glass_window.py      # 透明ファインダー、訳文レイアウト、設定ダイアログ
 │   ├── region_select.py     # Alt+S 範囲選択オーバーレイ（マルチモニター対応）
@@ -137,13 +149,15 @@ glass_translate/
 │   ├── global_hotkey.py     # グローバルショートカット（RegisterHotKey）
 │   ├── tray_manager.py      # トレイアイコンと右クリックメニュー
 │   ├── win32_utils.py       # キャプチャ除外、ウィンドウスタイル、高 DPI
-│   └── config.py            # 設定の読み書き
-├── resources/               # アイコン
-├── scripts/                 # ショートカット作成、配布パッケージ作成
-├── docs/                    # 各言語の README、類似ツール比較、デモ素材
+│   ├── config.py            # 設定の読み書き
+│   └── version.py           # バージョン番号
 ├── tests/                   # pytest テスト
-├── run.bat                  # 起動スクリプト（ビルド済み exe を優先）
-└── build_exe.bat            # ビルドスクリプト
+├── packaging/               # ビルド用：PyInstaller 設定、ショートカット・配布 ZIP 作成スクリプト
+├── resources/               # アイコン
+├── docs/                    # 各言語の README、類似ツール比較、デモ素材
+├── build_exe.bat            # ワンクリックビルド
+├── requirements.txt         # 実行に必要な依存関係
+└── requirements-dev.txt     # 開発・ビルド用の依存関係
 ```
 </details>
 

@@ -3,30 +3,47 @@ chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 
-echo [1/5] 检查并安装打包依赖...
-py -3 -m pip install --quiet pyinstaller pillow
+rem 打包 GlassTranslate：生成 dist\GlassTranslate\ 和发布用的 ZIP。
+rem 在专用虚拟环境 .venv-build 里打包，避免把本机其他项目的库打进去。
 
-echo [2/5] 关闭已运行的进程...
+set "VENV=.venv-build"
+set "PY=%VENV%\Scripts\python.exe"
+
+echo [1/5] 准备打包环境 (%VENV%)...
+if not exist "%PY%" (
+    py -3 -m venv "%VENV%"
+    if errorlevel 1 goto fail
+)
+"%PY%" -m pip install --quiet --upgrade pip
+"%PY%" -m pip install --quiet -r requirements-dev.txt
+if errorlevel 1 goto fail
+
+echo [2/5] 关闭正在运行的 GlassTranslate...
 taskkill /f /im GlassTranslate.exe >nul 2>nul
 
-echo [3/5] 正在编译原生应用 (PyInstaller onedir)...
-py -3 -m PyInstaller --onedir --noconsole --name "GlassTranslate" --icon="resources/app_icon.ico" --add-data="resources/app_icon.ico;resources" --paths src --clean -y main.py
+echo [3/5] 用 PyInstaller 打包...
+"%PY%" -m PyInstaller --noconfirm --clean --distpath dist --workpath build packaging\GlassTranslate.spec
+if errorlevel 1 goto fail
 
-echo [4/5] 正在更新桌面快捷方式...
-py -3 scripts/create_shortcut.py
+echo [4/5] 更新快捷方式 (桌面和项目目录)...
+"%PY%" packaging\create_shortcut.py
 
-echo [5/5] 正在生成免配环境分发安装包 (ZIP)...
-py -3 scripts/package_release.py
+echo [5/5] 生成发布用的 ZIP...
+"%PY%" packaging\package_release.py
+if errorlevel 1 goto fail
 
 echo.
-if exist "dist\GlassTranslate\GlassTranslate.exe" (
-    echo ========================================================
-    echo  打包成功！
-    echo  1. 原生免解压应用: dist\GlassTranslate\GlassTranslate.exe
-    echo  2. 本地快捷方式: 桌面\GlassTranslate.lnk (双击秒开)
-    echo  3. 分发给朋友的安装包: 桌面\GlassTranslate-v1.0.0-Windows-x64.zip
-    echo ========================================================
-) else (
-    echo [错误] 打包失败，请检查上方控制台输出信息。
-)
+echo ========================================================
+echo  打包成功
+echo  程序:     dist\GlassTranslate\GlassTranslate.exe
+echo  发布包:   dist\GlassTranslate-v*-Windows-x64.zip
+echo  上传前请先启动一次上面的 exe，确认能正常运行。
+echo ========================================================
 pause
+exit /b 0
+
+:fail
+echo.
+echo [错误] 打包失败，请查看上方输出。
+pause
+exit /b 1

@@ -31,9 +31,21 @@ GlassTranslate 是一个 Windows 屏幕实时翻译工具。它是一个没有�
 
 ## 下载与使用
 
-1. 在 [Releases](https://github.com/newHashub/glass_translate/releases) 下载 `GlassTranslate-v1.0.0-Windows-x64.zip`，解压到任意位置。
-2. 双击 `GlassTranslate.exe` 启动（也可以运行 `一键生成桌面快捷方式.vbs` 在桌面放个图标）。
+1. 打开 [Releases](https://github.com/newHashub/glass_translate/releases)，下载最新版的 `GlassTranslate-vX.Y.Z-Windows-x64.zip`（在页面下方的 Assets 里）。
+2. 解压到任意位置，打开解压出来的 `GlassTranslate` 文件夹，双击 `GlassTranslate.exe` 启动。
 3. 把取景框拖到外文上即可。按 `Alt + R` 可以随时在鼠标处呼出或隐藏。
+
+解压后的文件夹里有：
+
+```
+GlassTranslate/
+├── GlassTranslate.exe      ← 双击启动
+├── 创建桌面快捷方式.vbs     ← 想在桌面放个图标就双击它
+├── 使用说明.txt
+└── _internal/              ← 运行库，请勿删除或单独移动 exe
+```
+
+> 仓库首页的源代码（Code → Download ZIP）是给开发者的，不能直接运行。普通用户请下载 Releases 里的 ZIP。
 
 不需要安装 Python。如果要识别日文或韩文，需要先安装对应的 OCR 语言包，见[常见问题](#常见问题)。
 
@@ -107,12 +119,12 @@ Windows 只带有你所安装语言的 OCR。没有装日语或韩语，就识�
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-pip install -r requirements.txt
-python main.py        # 或双击 run.bat
+pip install -r requirements-dev.txt
+python main.py        # 运行
 pytest                # 运行测试（离线）
 ```
 
-双击 `build_exe.bat` 打包：生成 `dist\GlassTranslate\`、桌面快捷方式和发布用的 ZIP。
+**打包**：双击 `build_exe.bat`。它会在 `.venv-build` 里建一个干净的虚拟环境，生成 `dist\GlassTranslate\`、桌面快捷方式和 `dist\GlassTranslate-v版本号-Windows-x64.zip`。版本号在 `src/version.py` 里改。
 
 <details>
 <summary><b>工作原理与目录结构</b></summary>
@@ -121,8 +133,8 @@ pytest                # 运行测试（离线）
 
 ```
 glass_translate/
-├── main.py                  # 入口，转到 src/main.py
-├── src/
+├── main.py                  # 程序入口
+├── src/                     # 源代码
 │   ├── main.py              # 启动流程：托盘、全局快捷键、退出清理
 │   ├── glass_window.py      # 透明取景框、译文排版、设置对话框
 │   ├── region_select.py     # Alt+S 框选遮罩（支持多显示器）
@@ -133,13 +145,15 @@ glass_translate/
 │   ├── global_hotkey.py     # 全局快捷键（RegisterHotKey）
 │   ├── tray_manager.py      # 托盘图标与右键菜单
 │   ├── win32_utils.py       # 防自截屏、窗口样式、高 DPI
-│   └── config.py            # 配置读写
-├── resources/               # 图标
-├── scripts/                 # 快捷方式、发布打包脚本
-├── docs/                    # 其他语言 README、同类工具对比、演示素材
+│   ├── config.py            # 配置读写
+│   └── version.py           # 版本号
 ├── tests/                   # pytest 测试
-├── run.bat                  # 启动脚本（优先使用已打包的 exe）
-└── build_exe.bat            # 打包脚本
+├── packaging/               # 打包用：PyInstaller 配置、生成快捷方式和发布 ZIP 的脚本
+├── resources/               # 图标
+├── docs/                    # 其他语言 README、同类工具对比、演示素材
+├── build_exe.bat            # 一键打包
+├── requirements.txt         # 运行依赖
+└── requirements-dev.txt     # 开发与打包依赖
 ```
 </details>
 

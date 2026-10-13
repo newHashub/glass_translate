@@ -1,11 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
+# 由 build_exe.bat 调用：在项目根目录执行 pyinstaller packaging/GlassTranslate.spec
+import os
 
+ROOT = os.path.dirname(SPECPATH)
 
 a = Analysis(
-    ['main.py'],
-    pathex=['src'],
+    [os.path.join(ROOT, 'main.py')],
+    pathex=[os.path.join(ROOT, 'src')],
     binaries=[],
-    datas=[('resources/app_icon.ico', 'resources')],
+    datas=[(os.path.join(ROOT, 'resources', 'app_icon.ico'), 'resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -32,7 +35,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['resources/app_icon.ico'],
+    icon=[os.path.join(ROOT, 'resources', 'app_icon.ico')],
 )
 coll = COLLECT(
     exe,

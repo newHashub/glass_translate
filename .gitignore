@@ -55,3 +55,6 @@ config.json
 *.log
 scratch/
 *.lnk
+
+# Build environment created by build_exe.bat
+.venv-build/

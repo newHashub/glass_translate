@@ -33,9 +33,21 @@ GlassTranslate는 Windows용 실시간 화면 번역 도구입니다. 테두리 
 
 ## 다운로드 및 사용
 
-1. [Releases](https://github.com/newHashub/glass_translate/releases)에서 `GlassTranslate-v1.0.0-Windows-x64.zip`을 내려받아 원하는 위치에 압축을 풉니다.
-2. `GlassTranslate.exe`를 더블클릭해 실행합니다(`一键生成桌面快捷方式.vbs`를 실행하면 바탕화면에 바로가기를 만들 수 있습니다).
+1. [Releases](https://github.com/newHashub/glass_translate/releases)를 열고 최신 `GlassTranslate-vX.Y.Z-Windows-x64.zip`을 내려받습니다(릴리스 아래쪽 Assets에 있습니다).
+2. 원하는 위치에 압축을 풀고, 안에 있는 `GlassTranslate` 폴더를 열어 `GlassTranslate.exe`를 더블클릭합니다.
 3. 뷰파인더를 외국어 위로 드래그합니다. `Alt + R`로 언제든 마우스 위치에 표시하거나 숨길 수 있습니다.
+
+압축을 푼 폴더 구성:
+
+```
+GlassTranslate/
+├── GlassTranslate.exe      ← 더블클릭해 실행
+├── 创建桌面快捷方式.vbs     ← "바탕화면 바로가기 만들기": 더블클릭하면 아이콘 생성
+├── 使用说明.txt             ← 사용 안내(중국어)
+└── _internal/              ← 실행에 필요한 파일. exe와 같은 곳에 두세요
+```
+
+> 저장소 페이지의 소스 코드(Code → Download ZIP)는 개발자용이라 바로 실행되지 않습니다. Releases의 ZIP을 내려받으세요.
 
 Python은 필요 없습니다. 한국어나 일본어를 인식하려면 해당 OCR 언어 팩이 필요합니다. [자주 묻는 질문](#자주-묻는-질문)을 참고하세요.
 
@@ -111,12 +123,12 @@ Windows 10/11과 Python 3.10 이상(3.12 권장)이 필요합니다.
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-pip install -r requirements.txt
-python main.py        # 또는 run.bat 더블클릭
+pip install -r requirements-dev.txt
+python main.py        # 실행
 pytest                # 테스트 실행(오프라인)
 ```
 
-`build_exe.bat`을 더블클릭하면 `dist\GlassTranslate\`, 바탕화면 바로가기, 배포용 ZIP이 만들어집니다.
+**빌드**: `build_exe.bat`을 더블클릭합니다. `.venv-build`에 깨끗한 가상 환경을 만들고 `dist\GlassTranslate\`, 바탕화면 바로가기, `dist\GlassTranslate-v<버전>-Windows-x64.zip`을 생성합니다. 버전은 `src/version.py`에서 바꿉니다.
 
 <details>
 <summary><b>작동 원리와 디렉터리 구조</b></summary>
@@ -125,8 +137,8 @@ pytest                # 테스트 실행(오프라인)
 
 ```
 glass_translate/
-├── main.py                  # 진입점(src/main.py 호출)
-├── src/
+├── main.py                  # 진입점
+├── src/                     # 소스 코드
 │   ├── main.py              # 시작 처리: 트레이, 전역 단축키, 종료 정리
 │   ├── glass_window.py      # 투명 뷰파인더, 번역문 레이아웃, 설정 대화상자
 │   ├── region_select.py     # Alt+S 영역 선택 오버레이(다중 모니터 지원)
@@ -137,13 +149,15 @@ glass_translate/
 │   ├── global_hotkey.py     # 전역 단축키(RegisterHotKey)
 │   ├── tray_manager.py      # 트레이 아이콘과 우클릭 메뉴
 │   ├── win32_utils.py       # 캡처 제외, 창 스타일, 고 DPI
-│   └── config.py            # 설정 읽기/쓰기
-├── resources/               # 아이콘
-├── scripts/                 # 바로가기 생성, 배포 패키지 스크립트
-├── docs/                    # 다른 언어 README, 유사 도구 비교, 데모 자료
+│   ├── config.py            # 설정 읽기/쓰기
+│   └── version.py           # 버전 번호
 ├── tests/                   # pytest 테스트
-├── run.bat                  # 실행 스크립트(빌드된 exe 우선)
-└── build_exe.bat            # 빌드 스크립트
+├── packaging/               # 빌드용: PyInstaller 설정, 바로가기·배포 ZIP 생성 스크립트
+├── resources/               # 아이콘
+├── docs/                    # 다른 언어 README, 유사 도구 비교, 데모 자료
+├── build_exe.bat            # 원클릭 빌드
+├── requirements.txt         # 실행 의존성
+└── requirements-dev.txt     # 개발·빌드 의존성
 ```
 </details>
 

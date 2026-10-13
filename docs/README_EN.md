@@ -33,9 +33,21 @@ GlassTranslate is a real-time screen translator for Windows. It is a frameless, 
 
 ## Download and use
 
-1. Download `GlassTranslate-v1.0.0-Windows-x64.zip` from [Releases](https://github.com/newHashub/glass_translate/releases) and unzip it anywhere.
-2. Double-click `GlassTranslate.exe` (or run `一键生成桌面快捷方式.vbs` to put a shortcut on your desktop).
+1. Open [Releases](https://github.com/newHashub/glass_translate/releases) and download the latest `GlassTranslate-vX.Y.Z-Windows-x64.zip` (under Assets at the bottom of the release).
+2. Unzip it anywhere, open the `GlassTranslate` folder inside, and double-click `GlassTranslate.exe`.
 3. Drag the viewfinder over foreign text. Press `Alt + R` at any time to show or hide it at the mouse cursor.
+
+The unzipped folder contains:
+
+```
+GlassTranslate/
+├── GlassTranslate.exe      ← double-click to start
+├── 创建桌面快捷方式.vbs     ← "Create desktop shortcut": double-click for a desktop icon
+├── 使用说明.txt             ← usage notes (Chinese)
+└── _internal/              ← runtime files; keep them next to the exe
+```
+
+> The source code on the repository page (Code → Download ZIP) is for developers and won't run by itself. Download the ZIP from Releases instead.
 
 Python is not required. To recognize Japanese or Korean you need the matching OCR language pack; see the [FAQ](#faq).
 
@@ -111,12 +123,12 @@ Requires Windows 10/11 and Python 3.10+ (3.12 recommended).
 ```bash
 git clone https://github.com/newHashub/glass_translate.git
 cd glass_translate
-pip install -r requirements.txt
-python main.py        # or double-click run.bat
+pip install -r requirements-dev.txt
+python main.py        # run
 pytest                # run the tests (offline)
 ```
 
-Double-click `build_exe.bat` to build `dist\GlassTranslate\`, a desktop shortcut, and the release ZIP.
+**Building**: double-click `build_exe.bat`. It creates a clean virtual environment in `.venv-build` and produces `dist\GlassTranslate\`, a desktop shortcut, and `dist\GlassTranslate-v<version>-Windows-x64.zip`. The version lives in `src/version.py`.
 
 <details>
 <summary><b>How it works and project layout</b></summary>
@@ -125,8 +137,8 @@ A background thread loops: capture the screen under the viewfinder → skip if n
 
 ```
 glass_translate/
-├── main.py                  # Entry point, forwards to src/main.py
-├── src/
+├── main.py                  # Entry point
+├── src/                     # Source code
 │   ├── main.py              # Startup: tray, global hotkeys, cleanup
 │   ├── glass_window.py      # Transparent viewfinder, layout, dialogs
 │   ├── region_select.py     # Alt+S selection overlay (multi-monitor)
@@ -137,13 +149,15 @@ glass_translate/
 │   ├── global_hotkey.py     # Global hotkeys (RegisterHotKey)
 │   ├── tray_manager.py      # Tray icon and right-click menu
 │   ├── win32_utils.py       # Capture exclusion, window styling, high DPI
-│   └── config.py            # Settings
-├── resources/               # Icon
-├── scripts/                 # Shortcut and release packaging scripts
-├── docs/                    # Translated READMEs, comparison, demo assets
+│   ├── config.py            # Settings
+│   └── version.py           # Version number
 ├── tests/                   # pytest tests
-├── run.bat                  # Launcher (prefers the packaged exe)
-└── build_exe.bat            # Build script
+├── packaging/               # Build files: PyInstaller spec, shortcut and release ZIP scripts
+├── resources/               # Icon
+├── docs/                    # Translated READMEs, comparison, demo assets
+├── build_exe.bat            # One-click build
+├── requirements.txt         # Runtime dependencies
+└── requirements-dev.txt     # Development and build dependencies
 ```
 </details>
 
